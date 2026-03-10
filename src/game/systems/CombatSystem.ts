@@ -2,9 +2,10 @@ import Phaser from 'phaser';
 import { PlayerUnit } from '../entities/PlayerUnit';
 import { EnemyUnit } from '../entities/EnemyUnit';
 import { Projectile } from '../entities/Projectile';
+import { Barricade } from '../entities/Barricade';
 
 /**
- * CombatSystem: handles auto-attack targeting, projectile spawning, and damage.
+ * CombatSystem: player auto-attacks from cover, enemies assault the barricade then player.
  */
 export class CombatSystem {
   private scene: Phaser.Scene;
@@ -14,10 +15,10 @@ export class CombatSystem {
     this.scene = scene;
   }
 
-  update(player: PlayerUnit, enemies: EnemyUnit[], delta: number): EnemyUnit[] {
+  update(player: PlayerUnit, enemies: EnemyUnit[], delta: number, barricade: Barricade): EnemyUnit[] {
     const killed: EnemyUnit[] = [];
 
-    // Player auto-attack
+    // Player auto-attack: target closest enemy in range
     player.attackCooldown -= delta / 1000;
     if (player.attackCooldown <= 0) {
       const target = this.findClosestEnemy(player, enemies);
@@ -57,17 +58,23 @@ export class CombatSystem {
       }
     }
 
-    // Enemy attacks on player
+    // Enemy melee attacks: when at the defense line, attack barricade (or player if barricade destroyed)
+    const defenseX = barricade.defenseLineX;
     for (const enemy of enemies) {
       if (enemy.isDead) continue;
-      const dx = player.x - enemy.x;
-      const dy = player.y - enemy.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < enemy.def.size + 20) {
+      const atLine = enemy.x <= defenseX + enemy.def.size + 10;
+      if (atLine) {
         enemy.attackCooldown -= delta / 1000;
         if (enemy.attackCooldown <= 0) {
           enemy.attackCooldown = 1 / enemy.def.attackSpeed;
-          player.takeDamage(enemy.def.damage);
+          enemy.playAttackAnimation();
+
+          if (!barricade.isDestroyed) {
+            barricade.takeDamage(enemy.def.damage);
+          } else {
+            // Barricade down — damage player directly
+            player.takeDamage(enemy.def.damage);
+          }
         }
       }
     }

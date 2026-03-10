@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { BattleScene } from './BattleScene';
 
 /**
- * UIScene: HUD overlay showing gold, kills, health, upgrades, and game-over screen.
+ * UIScene: HUD overlay with gold, kills, HP, barricade HP, upgrades, and game-over.
  */
 export class UIScene extends Phaser.Scene {
   private battleScene!: BattleScene;
@@ -10,8 +10,11 @@ export class UIScene extends Phaser.Scene {
   private killsText!: Phaser.GameObjects.Text;
   private healthBar!: Phaser.GameObjects.Rectangle;
   private healthBarBg!: Phaser.GameObjects.Rectangle;
+  private barricadeBar!: Phaser.GameObjects.Rectangle;
+  private barricadeBarBg!: Phaser.GameObjects.Rectangle;
   private tierText!: Phaser.GameObjects.Text;
   private upgradeFlash!: Phaser.GameObjects.Text;
+  private barricadeLabel!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'UIScene' });
@@ -23,50 +26,61 @@ export class UIScene extends Phaser.Scene {
 
   create() {
     const w = this.scale.width;
-    const pad = 12;
+    const pad = 10;
+    const barW = 100;
 
-    // Gold display
+    // === TOP-LEFT: Gold & Kills ===
     this.goldText = this.add.text(pad, pad, '💰 0', {
-      fontSize: '18px',
+      fontSize: '16px',
       color: '#ffd700',
       fontFamily: 'monospace',
       fontStyle: 'bold',
     });
 
-    // Kills display
-    this.killsText = this.add.text(pad, pad + 28, '☠ 0', {
-      fontSize: '14px',
+    this.killsText = this.add.text(pad, pad + 22, '☠ 0', {
+      fontSize: '13px',
       color: '#cccccc',
       fontFamily: 'monospace',
     });
 
-    // Tier display
-    this.tierText = this.add.text(pad, pad + 50, '', {
-      fontSize: '12px',
+    this.tierText = this.add.text(pad, pad + 42, '', {
+      fontSize: '11px',
       color: '#66aaff',
       fontFamily: 'monospace',
     });
 
-    // Health bar
-    this.healthBarBg = this.add.rectangle(w - pad - 60, pad + 10, 120, 12, 0x331111);
-    this.healthBar = this.add.rectangle(w - pad - 60, pad + 10, 120, 12, 0xcc3333);
-    this.add.text(w - pad - 100, pad + 24, 'HP', {
-      fontSize: '10px',
+    // === TOP-RIGHT: HP bars ===
+    const barsX = w - pad - barW / 2;
+
+    // Player HP
+    this.add.text(w - pad - barW, pad - 2, 'SOLDIER', {
+      fontSize: '8px',
       color: '#cc6666',
       fontFamily: 'monospace',
     });
+    this.healthBarBg = this.add.rectangle(barsX, pad + 12, barW, 8, 0x331111);
+    this.healthBar = this.add.rectangle(barsX, pad + 12, barW, 8, 0xcc3333);
 
-    // Upgrade flash text (hidden by default)
+    // Barricade HP
+    this.barricadeLabel = this.add.text(w - pad - barW, pad + 22, 'BARRICADE', {
+      fontSize: '8px',
+      color: '#55aa55',
+      fontFamily: 'monospace',
+    });
+    this.barricadeBarBg = this.add.rectangle(barsX, pad + 36, barW, 8, 0x112211);
+    this.barricadeBar = this.add.rectangle(barsX, pad + 36, barW, 8, 0x55aa55);
+
+    // Upgrade flash
     this.upgradeFlash = this.add.text(w / 2, 60, '', {
-      fontSize: '20px',
+      fontSize: '18px',
       color: '#ffd700',
       fontFamily: 'monospace',
       fontStyle: 'bold',
     }).setOrigin(0.5).setAlpha(0);
 
-    // Fullscreen button in-game
-    const fsBtn = this.add.text(w - pad, pad + 44, '⛶', {
-      fontSize: '20px',
+    // Fullscreen button
+    const fsBtn = this.add.text(w - pad, pad + 54, '⛶', {
+      fontSize: '18px',
       color: '#666666',
       fontFamily: 'monospace',
     }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
@@ -75,7 +89,7 @@ export class UIScene extends Phaser.Scene {
       else this.scale.startFullscreen();
     });
 
-    // Listen to battle events
+    // === Event listeners ===
     this.battleScene.events.on('goldChanged', (gold: number) => {
       this.goldText.setText(`💰 ${gold}`);
     });
@@ -87,6 +101,15 @@ export class UIScene extends Phaser.Scene {
     this.battleScene.events.on('healthChanged', (current: number, max: number) => {
       const ratio = current / max;
       this.healthBar.setScale(ratio, 1);
+    });
+
+    this.battleScene.events.on('barricadeChanged', (current: number, max: number) => {
+      const ratio = current / max;
+      this.barricadeBar.setScale(ratio, 1);
+      if (current <= 0) {
+        this.barricadeLabel.setText('BARRICADE ☠');
+        this.barricadeLabel.setColor('#cc3333');
+      }
     });
 
     this.battleScene.events.on('unitUpgraded', (tierName: string) => {
@@ -113,28 +136,26 @@ export class UIScene extends Phaser.Scene {
     const w = this.scale.width;
     const h = this.scale.height;
 
-    // Darken overlay
     this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.7);
 
-    this.add.text(w / 2, h * 0.3, 'GAME OVER', {
-      fontSize: '28px',
+    this.add.text(w / 2, h * 0.3, 'DEFENSE FALLEN', {
+      fontSize: '24px',
       color: '#cc3333',
       fontFamily: 'monospace',
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
     this.add.text(w / 2, h * 0.45, `Kills: ${kills}\nGold: ${gold}`, {
-      fontSize: '16px',
+      fontSize: '14px',
       color: '#ffffff',
       fontFamily: 'monospace',
       align: 'center',
     }).setOrigin(0.5);
 
-    // Retry button
-    const retryBg = this.add.rectangle(w / 2, h * 0.65, 140, 40, 0xffd700)
+    const retryBg = this.add.rectangle(w / 2, h * 0.62, 130, 36, 0xffd700)
       .setInteractive({ useHandCursor: true });
-    this.add.text(w / 2, h * 0.65, 'RETRY', {
-      fontSize: '18px',
+    this.add.text(w / 2, h * 0.62, 'RETRY', {
+      fontSize: '16px',
       color: '#1a1a2e',
       fontFamily: 'monospace',
       fontStyle: 'bold',
