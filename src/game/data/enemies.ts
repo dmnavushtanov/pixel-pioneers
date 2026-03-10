@@ -1,0 +1,37 @@
+import type { EnemyDefinition } from '../types';
+
+export const ENEMY_TYPES: EnemyDefinition[] = [
+  {
+    id: 'grunt',
+    name: 'Grunt',
+    health: 30,
+    damage: 5,
+    attackSpeed: 1,
+    moveSpeed: 40,
+    goldDrop: { min: 1, max: 3 },
+    color: 0xcc4444,
+    size: 14,
+  },
+  {
+    id: 'brute',
+    name: 'Brute',
+    health: 80,
+    damage: 12,
+    attackSpeed: 0.5,
+    moveSpeed: 25,
+    goldDrop: { min: 3, max: 8 },
+    color: 0x884422,
+    size: 20,
+  },
+  {
+    id: 'runner',
+    name: 'Runner',
+    health: 15,
+    damage: 3,
+    attackSpeed: 1.5,
+    moveSpeed: 80,
+    goldDrop: { min: 1, max: 2 },
+    color: 0x44cc44,
+    size: 10,
+  },
+];
