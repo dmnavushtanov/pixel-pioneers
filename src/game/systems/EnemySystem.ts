@@ -4,6 +4,7 @@ import { ENEMY_TYPES } from '../data/enemies';
 
 /**
  * EnemySystem: spawns waves of enemies from the right side.
+ * Enemies march toward the defense line.
  */
 export class EnemySystem {
   private scene: Phaser.Scene;
@@ -11,9 +12,11 @@ export class EnemySystem {
   private spawnTimer = 0;
   private spawnInterval = 2; // seconds between spawns
   private waveCount = 0;
+  private defenseLineX: number;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, defenseLineX: number) {
     this.scene = scene;
+    this.defenseLineX = defenseLineX;
   }
 
   update(delta: number, playerX: number, playerY: number) {
@@ -23,10 +26,15 @@ export class EnemySystem {
       this.spawnTimer = this.spawnInterval;
     }
 
-    // Move enemies toward player
+    // Move enemies toward defense line, then toward player
     for (const enemy of this.enemies) {
       if (!enemy.isDead) {
-        enemy.moveToward(playerX, playerY, delta);
+        // Target the defense line X, at the enemy's current Y
+        const targetX = this.defenseLineX + enemy.def.size + 5;
+        if (enemy.x > targetX) {
+          enemy.moveToward(targetX, enemy.y, delta);
+        }
+        // Once at the line, enemy is "attacking" — handled by CombatSystem
       }
     }
   }
@@ -35,7 +43,8 @@ export class EnemySystem {
     const w = this.scene.scale.width;
     const h = this.scene.scale.height;
     const def = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
-    const y = 80 + Math.random() * (h - 160);
+    const y = 60 + Math.random() * (h - 120);
+    // Spawn off-screen right
     const enemy = new EnemyUnit(this.scene, w + 30, y, def);
     this.enemies.push(enemy);
     this.waveCount++;
@@ -52,7 +61,6 @@ export class EnemySystem {
   }
 
   cleanup() {
-    // Remove destroyed enemies
     this.enemies = this.enemies.filter((e) => e.active);
   }
 }
