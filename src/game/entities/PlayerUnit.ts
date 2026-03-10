@@ -3,8 +3,7 @@ import type { UnitDefinition, UnitStats, WeaponDefinition } from '../types';
 import { WEAPONS } from '../data/weapons';
 
 /**
- * Player unit: stationary auto-attacker with visual placeholder.
- * Supports upgrade tiers and weapon swapping.
+ * Player unit: stationary auto-attacker with visual silhouette.
  */
 export class PlayerUnit extends Phaser.GameObjects.Container {
   public def: UnitDefinition;
@@ -15,7 +14,7 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
   public weapon: WeaponDefinition;
   public attackCooldown = 0;
 
-  private body_gfx: Phaser.GameObjects.Arc;
+  private bodyGfx: Phaser.GameObjects.Container;
   private weaponGfx: Phaser.GameObjects.Rectangle;
   private glowGfx: Phaser.GameObjects.Arc;
   private tierLabel: Phaser.GameObjects.Text;
@@ -27,36 +26,56 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
     this.effectiveStats = { ...def.baseStats };
     this.weapon = WEAPONS[def.weaponId];
 
-    // Glow
-    this.glowGfx = new Phaser.GameObjects.Arc(scene, 0, 0, 24, 0, 360, false, def.color, 0.2);
+    // Glow for tier upgrades
+    this.glowGfx = new Phaser.GameObjects.Arc(scene, 0, 0, 30, 0, 360, false, def.color, 0.15);
 
-    // Body
-    this.body_gfx = new Phaser.GameObjects.Arc(scene, 0, 0, 16, 0, 360, false, def.color);
+    // Character Silhouette (Cartoon style)
+    this.bodyGfx = new Phaser.GameObjects.Container(scene, 0, 0);
+    
+    // Head
+    const head = new Phaser.GameObjects.Arc(scene, 0, -18, 10, 0, 360, false, 0x111111);
+    // Torso
+    const torso = new Phaser.GameObjects.Rectangle(scene, 0, 0, 20, 28, 0x111111);
+    // Legs
+    const legL = new Phaser.GameObjects.Rectangle(scene, -6, 14, 8, 14, 0x111111);
+    const legR = new Phaser.GameObjects.Rectangle(scene, 6, 14, 8, 14, 0x111111);
+    
+    // Add colored accent (team color)
+    const accent = new Phaser.GameObjects.Rectangle(scene, 0, -2, 16, 6, def.color);
+
+    this.bodyGfx.add([legL, legR, torso, head, accent]);
 
     // Weapon stub
     this.weaponGfx = new Phaser.GameObjects.Rectangle(
-      scene, 18, 0, this.weapon.length, 4, this.weapon.color
-    );
+      scene, 12, 0, this.weapon.length, 6, 0x333333
+    ).setOrigin(0, 0.5);
 
     // Tier label
-    this.tierLabel = new Phaser.GameObjects.Text(scene, 0, -28, def.name, {
+    this.tierLabel = new Phaser.GameObjects.Text(scene, 0, -45, def.name, {
       fontSize: '10px',
       color: '#ffffff',
       fontFamily: 'monospace',
+      backgroundColor: '#00000088'
     }).setOrigin(0.5);
 
-    this.add([this.glowGfx, this.body_gfx, this.weaponGfx, this.tierLabel]);
+    this.add([this.glowGfx, this.bodyGfx, this.weaponGfx, this.tierLabel]);
     scene.add.existing(this);
   }
 
-  /** Simple shoot animation: weapon recoil */
   playShootAnimation() {
     this.scene.tweens.add({
       targets: this.weaponGfx,
-      x: 24,
-      duration: 60,
+      x: 8,
+      duration: 50,
       yoyo: true,
       ease: 'Quad.easeOut',
+    });
+    // Slight body kickback
+    this.scene.tweens.add({
+      targets: this.bodyGfx,
+      x: -2,
+      duration: 50,
+      yoyo: true,
     });
   }
 
@@ -86,17 +105,17 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
       range: base.range * (tier.statMultipliers.range ?? 1),
       moveSpeed: base.moveSpeed * (tier.statMultipliers.moveSpeed ?? 1),
     };
+    // Heal on upgrade
     this.currentHealth = this.effectiveStats.maxHealth;
 
     // Visual upgrade feedback
     this.tierLabel.setText(`${this.def.name} [${tier.name}]`);
     if (tier.glowColor) {
-      this.glowGfx.setFillStyle(tier.glowColor, 0.35);
+      this.glowGfx.setFillStyle(tier.glowColor, 0.4);
       this.scene.tweens.add({
         targets: this.glowGfx,
-        scaleX: 1.5,
-        scaleY: 1.5,
-        duration: 300,
+        scale: 1.8,
+        duration: 500,
         yoyo: true,
       });
     }
@@ -104,8 +123,16 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
 
   takeDamage(amount: number): boolean {
     this.currentHealth = Math.max(0, this.currentHealth - amount);
-    if (this.currentHealth <= 0) return true;
-    return false;
+    
+    // Flash effect
+    this.scene.tweens.add({
+      targets: this.bodyGfx,
+      alpha: 0.5,
+      duration: 50,
+      yoyo: true
+    });
+
+    return this.currentHealth <= 0;
   }
 
   getEffectiveDamage(): number {

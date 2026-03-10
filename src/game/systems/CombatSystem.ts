@@ -5,7 +5,8 @@ import { Projectile } from '../entities/Projectile';
 import { Barricade } from '../entities/Barricade';
 
 /**
- * CombatSystem: player auto-attacks from cover, enemies assault the barricade then player.
+ * CombatSystem: multiple defenders auto-attack from cover, 
+ * enemies assault the barricade then defenders.
  */
 export class CombatSystem {
   private scene: Phaser.Scene;
@@ -15,26 +16,39 @@ export class CombatSystem {
     this.scene = scene;
   }
 
-  update(player: PlayerUnit, enemies: EnemyUnit[], delta: number, barricade: Barricade): EnemyUnit[] {
+  update(defenders: PlayerUnit[], enemies: EnemyUnit[], delta: number, barricade: Barricade): EnemyUnit[] {
     const killed: EnemyUnit[] = [];
 
-    // Player auto-attack: target closest enemy in range
-    player.attackCooldown -= delta / 1000;
-    if (player.attackCooldown <= 0) {
-      const target = this.findClosestEnemy(player, enemies);
-      if (target) {
-        player.attackCooldown = 1 / player.getEffectiveAttackSpeed();
-        player.playShootAnimation();
-        const proj = new Projectile(
-          this.scene,
-          player.x + 18,
-          player.y,
-          target.x,
-          target.y,
-          player.weapon,
-          player.getEffectiveDamage()
-        );
-        this.projectiles.push(proj);
+    // Defenders auto-attack: target closest enemy in range
+    for (const defender of defenders) {
+      if (defender.currentHealth <= 0) continue;
+
+      defender.attackCooldown -= delta / 1000;
+      if (defender.attackCooldown <= 0) {
+        const target = this.findClosestEnemy(defender, enemies);
+        if (target) {
+          defender.attackCooldown = 1 / defender.getEffectiveAttackSpeed();
+          defender.playShootAnimation();
+          
+          // Use world coordinates since units are in containers
+          const worldPos = defender.getWorldTransformMatrix();
+          const wx = worldPos.tx;
+          const wy = worldPos.ty;
+
+          // Muzzle flash effect
+          this.createMuzzleFlash(wx + 24, wy);
+
+          const proj = new Projectile(
+            this.scene,
+            wx + 24,
+            wy,
+            target.x,
+            target.y,
+            defender.weapon,
+            defender.getEffectiveDamage()
+          );
+          this.projectiles.push(proj);
+        }
       }
     }
 
@@ -48,9 +62,13 @@ export class CombatSystem {
           if (enemy.isDead) continue;
           const dx = p.targetX - enemy.x;
           const dy = p.targetY - enemy.y;
-          if (Math.sqrt(dx * dx + dy * dy) < enemy.def.size + 5) {
+          // Use distance check
+          if (Math.sqrt(dx * dx + dy * dy) < enemy.def.size + 10) {
             const dead = enemy.takeDamage(p.dmg);
             if (dead) killed.push(enemy);
+            
+            // Impact effect
+            this.createImpactEffect(p.targetX, p.targetY);
             break;
           }
         }
@@ -58,11 +76,12 @@ export class CombatSystem {
       }
     }
 
-    // Enemy melee attacks: when at the defense line, attack barricade (or player if barricade destroyed)
+    // Enemy melee attacks: when at the defense line, attack barricade (or defenders if barricade destroyed)
     const defenseX = barricade.defenseLineX;
     for (const enemy of enemies) {
       if (enemy.isDead) continue;
-      const atLine = enemy.x <= defenseX + enemy.def.size + 10;
+      
+      const atLine = enemy.x <= defenseX + enemy.def.size + 15;
       if (atLine) {
         enemy.attackCooldown -= delta / 1000;
         if (enemy.attackCooldown <= 0) {
@@ -72,8 +91,11 @@ export class CombatSystem {
           if (!barricade.isDestroyed) {
             barricade.takeDamage(enemy.def.damage);
           } else {
-            // Barricade down — damage player directly
-            player.takeDamage(enemy.def.damage);
+            // Barricade down — damage a defender in the same lane (or closest)
+            const targetDefender = this.findClosestDefender(enemy, defenders);
+            if (targetDefender) {
+              targetDefender.takeDamage(enemy.def.damage);
+            }
           }
         }
       }
@@ -82,13 +104,19 @@ export class CombatSystem {
     return killed;
   }
 
-  private findClosestEnemy(player: PlayerUnit, enemies: EnemyUnit[]): EnemyUnit | null {
+  private findClosestEnemy(defender: PlayerUnit, enemies: EnemyUnit[]): EnemyUnit | null {
     let closest: EnemyUnit | null = null;
-    let minDist = player.getEffectiveRange();
+    let minDist = defender.getEffectiveRange();
+    
+    // Convert defender world position if it's in a container
+    const worldPos = defender.getWorldTransformMatrix();
+    const dx_world = worldPos.tx;
+    const dy_world = worldPos.ty;
+
     for (const e of enemies) {
       if (e.isDead) continue;
-      const dx = player.x - e.x;
-      const dy = player.y - e.y;
+      const dx = dx_world - e.x;
+      const dy = dy_world - e.y;
       const d = Math.sqrt(dx * dx + dy * dy);
       if (d < minDist) {
         minDist = d;
@@ -96,5 +124,46 @@ export class CombatSystem {
       }
     }
     return closest;
+  }
+
+  private findClosestDefender(enemy: EnemyUnit, defenders: PlayerUnit[]): PlayerUnit | null {
+    let closest: PlayerUnit | null = null;
+    let minDist = 99999;
+    for (const d of defenders) {
+      if (d.currentHealth <= 0) continue;
+      const worldPos = d.getWorldTransformMatrix();
+      const dx = enemy.x - worldPos.tx;
+      const dy = enemy.y - worldPos.ty;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = d;
+      }
+    }
+    return closest;
+  }
+
+  private createMuzzleFlash(x: number, y: number) {
+    const flash = this.scene.add.circle(x, y, 10, 0xffaa00, 0.8);
+    flash.setDepth(200);
+    this.scene.tweens.add({
+      targets: flash,
+      alpha: 0,
+      scale: 1.5,
+      duration: 50,
+      onComplete: () => flash.destroy()
+    });
+  }
+
+  private createImpactEffect(x: number, y: number) {
+    const impact = this.scene.add.circle(x, y, 6, 0xffffff, 0.8);
+    impact.setDepth(200);
+    this.scene.tweens.add({
+      targets: impact,
+      alpha: 0,
+      scale: 2,
+      duration: 80,
+      onComplete: () => impact.destroy()
+    });
   }
 }
