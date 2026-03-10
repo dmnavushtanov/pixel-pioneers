@@ -1,14 +1,30 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect, useRef } from 'react';
+import { launchGame } from '@/game/config';
+import type Phaser from 'phaser';
 
-const Index = () => {
+/**
+ * GamePage: React wrapper that mounts the Phaser game into a full-viewport container.
+ */
+const GamePage = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const gameRef = useRef<Phaser.Game | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || gameRef.current) return;
+
+    gameRef.current = launchGame(containerRef.current);
+
+    return () => {
+      gameRef.current?.destroy(true);
+      gameRef.current = null;
+    };
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="fixed inset-0 bg-background">
+      <div ref={containerRef} className="w-full h-full" />
     </div>
   );
 };
 
-export default Index;
+export default GamePage;
