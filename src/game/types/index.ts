@@ -8,3 +8,20 @@ export type {
   AnimationTrack,
   AnimationSet,
 } from './AnimationDefinition';
+export type {
+  BattlefieldDefinition,
+  BattlefieldLayout,
+  DefenderSlotDefinition,
+  SpawnZoneDefinition,
+  BarricadeDefinition,
+  LaneDefinition,
+  LootBounds,
+  PropAnchor,
+  CameraSafeArea,
+  Vec2,
+  Rect,
+} from './BattlefieldDefinition';
+export type {
+  UnitRenderDefinition,
+  UnitAssetManifest,
+} from './UnitRenderDefinition';
