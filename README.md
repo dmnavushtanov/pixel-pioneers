@@ -5,11 +5,13 @@ A mobile-first 2D side-view auto-battle / tower defense browser game built with 
 ## 🎮 Game Concept
 
 - **Defenders** are stationed on the left behind a **barricade line** (sandbags, crates, props).
-- **Enemies** swarm from the right in large groups across **3 combat lanes**.
+- **Enemies** swarm from the right in **config-driven waves** across **3 combat lanes**.
 - **Combat** is automated: defenders auto-fire at the closest enemies in range.
 - Enemies attack the **defense line** first; if breached, they attack defenders directly.
 - Killed enemies **drop gold coins** — tap them to collect.
+- **Spend gold** to repair/reinforce the barricade or call artillery strikes.
 - Defenders **auto-upgrade** (Veteran → Elite → Champion) based on kill thresholds.
+- **Waves** increase in difficulty with scaling multipliers and more enemy groups.
 - Game ends when all defenders are defeated or the defense line is destroyed.
 
 ## 🏗️ Project Structure
@@ -22,11 +24,13 @@ src/
 │   │   ├── battlefields/       # Battlefield registry and configs
 │   │   │   ├── index.ts        # Battlefield registry + getBattlefield()
 │   │   │   └── desert_outpost.ts  # Desert Outpost layout config
-│   │   ├── enemies.ts          # Enemy type definitions
+│   │   ├── enemies.ts          # Enemy type definitions (grunt, brute, runner)
 │   │   ├── units.ts            # Player unit + upgrade tiers
-│   │   └── weapons.ts          # Weapon configs (musket, rifle)
+│   │   ├── weapons.ts          # Weapon configs (musket, rifle)
+│   │   ├── waves.ts            # Wave definitions + procedural scaling
+│   │   └── economy.ts          # Ability costs, repair/reinforce values
 │   ├── entities/
-│   │   ├── Barricade.ts        # Defense line with HP and props
+│   │   ├── Barricade.ts        # Defense line with HP, repair, reinforce, damage states
 │   │   ├── DefenderSlot.ts     # Station for player units
 │   │   ├── EnemyUnit.ts        # Enemy with silhouette + movement
 │   │   ├── LootDrop.ts         # Tappable gold coin
@@ -35,13 +39,14 @@ src/
 │   ├── scenes/
 │   │   ├── BootScene.ts        # Asset loading
 │   │   ├── MenuScene.ts        # Title screen
-│   │   ├── BattleScene.ts      # Config-driven battlefield
-│   │   └── UIScene.ts          # HUD overlay
+│   │   ├── BattleScene.ts      # Config-driven battlefield orchestrator
+│   │   └── UIScene.ts          # HUD: wave info, resources, action bar, game over
 │   ├── systems/
 │   │   ├── CombatSystem.ts     # Multi-unit targeting + projectiles
-│   │   ├── EnemySystem.ts      # Config-driven wave spawning
+│   │   ├── WaveSystem.ts       # Config-driven wave spawning + progression
 │   │   ├── LootSystem.ts       # Loot drops + tap-to-collect
 │   │   ├── UpgradeSystem.ts    # Kill tracking + tier progression
+│   │   ├── AbilitySystem.ts    # Player abilities: repair, reinforce, artillery
 │   │   ├── AnimationSystem.ts  # Future cutout-rig animation stub
 │   │   └── index.ts            # Barrel export
 │   └── types/
@@ -56,16 +61,14 @@ src/
 public/
 └── battlefields/
     └── desert_outpost/
-        └── layout.json         # Example layout config (also mirrored in code)
+        └── layout.json         # Example layout config
 ```
 
 ## 🗺️ Battlefield System
 
 ### How It Works
 
-Battlefields are **config-driven**. All gameplay positions (defender slots, barricade, lanes, spawn zones) come from a **layout config**, not from hardcoded scene values.
-
-The background image is **visual only** — it does not affect gameplay positions.
+Battlefields are **config-driven**. All gameplay positions come from a **layout config**, not from hardcoded scene values. The background image is **visual only**.
 
 ### Folder Structure
 
@@ -79,71 +82,127 @@ assets/battlefields/{battlefield_id}/
   props.json        # (optional) decorative props
 ```
 
-An example `layout.json` is at `public/battlefields/desert_outpost/layout.json`.
-
 ### Layout Config Format
 
-All positions in `layout.json` are **normalized (0-1)** relative to `worldBounds`. BattleScene converts them to pixel coordinates at runtime based on actual screen size. This makes layouts resolution-independent.
+All positions in `layout.json` are **normalized (0-1)** relative to `worldBounds`. BattleScene converts them to pixel coordinates at runtime.
 
 | Field | Purpose |
 |-------|---------|
 | `worldBounds` | Design resolution (e.g. 800×450) |
-| `backgroundKey` | Phaser asset key for the background image |
-| `barricade` | Defense line X position, top/bottom Y, HP |
-| `defenderSlots[]` | Position, lane index, unlock state for each slot |
-| `spawnZones[]` | Rect where enemies spawn + which lanes they feed |
+| `backgroundKey` | Phaser asset key for background |
+| `barricade` | Defense line X, top/bottom Y, HP |
+| `defenderSlots[]` | Position, lane index, unlock state |
+| `spawnZones[]` | Rect where enemies spawn + lane mappings |
 | `lanes[]` | Ground Y position and depth scale per lane |
-| `lootBounds` | Area where loot drops can appear |
-| `enemyStopLineX` | X position where enemies stop to attack |
+| `lootBounds` | Area where loot drops appear |
+| `enemyStopLineX` | X where enemies stop to attack |
 | `propAnchors[]` | Decorative prop positions |
 | `cameraSafeArea` | HUD-safe margins |
 
 ### Adding a New Battlefield
 
-1. Create `src/game/data/battlefields/my_new_map.ts` with a `BattlefieldLayout` export
+1. Create `src/game/data/battlefields/my_map.ts` with a `BattlefieldLayout` export
 2. Register it in `src/game/data/battlefields/index.ts`
-3. Optionally create `public/battlefields/my_new_map/layout.json` and `background.png`
+3. Optionally add `public/battlefields/my_map/layout.json` and `background.png`
 4. Change `DEFAULT_BATTLEFIELD_ID` or pass `battlefieldId` to BattleScene
 
-### Type Interfaces
+## ⚔️ Wave System
 
-| Interface | File | Purpose |
-|-----------|------|---------|
-| `BattlefieldDefinition` | `BattlefieldDefinition.ts` | Top-level battlefield with folder path + layout |
-| `BattlefieldLayout` | `BattlefieldDefinition.ts` | All gameplay positions and bounds |
-| `DefenderSlotDefinition` | `BattlefieldDefinition.ts` | Slot position + lane + unlock state |
-| `SpawnZoneDefinition` | `BattlefieldDefinition.ts` | Enemy spawn rect + lane mappings |
-| `BarricadeDefinition` | `BattlefieldDefinition.ts` | Defense line position + HP |
-| `LaneDefinition` | `BattlefieldDefinition.ts` | Lane Y position + depth scale |
+### Architecture
+
+Waves are defined in `src/game/data/waves.ts` as config arrays. Each wave specifies:
+
+| Field | Purpose |
+|-------|---------|
+| `wave` | Wave number (1-indexed display) |
+| `preWaveDelay` | Ms before wave starts |
+| `groups[]` | Enemy spawn groups |
+| `scalingMultiplier` | Stat scaling applied to all enemies |
+
+Each **enemy group** defines:
+- `enemyId` — which enemy type to spawn
+- `count` — how many
+- `spawnInterval` — ms between spawns
+- `startDelay` — ms before this group starts
+- `laneIndices` — optional lane restriction
+
+### Procedural Scaling
+
+Waves beyond the defined 7 are procedurally generated with increasing enemy counts and stat multipliers.
+
+### Wave States
+
+`WaveSystem` cycles through: `pre_wave` → `active` → `rest` → repeat. On defeat: `defeated`.
+
+### Tuning
+
+Edit `src/game/data/waves.ts` to change wave composition, timing, and difficulty curve.
+
+## 💰 Economy & Spending
+
+### Gold Loop
+
+Enemies drop gold → player taps to collect → spend on abilities.
+
+### Actions (in `src/game/data/economy.ts`)
+
+| Action | Cost | Cooldown | Effect |
+|--------|------|----------|--------|
+| 🔧 REPAIR | 15g | 3s | Restore 100 barricade HP |
+| 🛡 REINFORCE | 40g | 15s | +100 max barricade HP |
+| 💥 ARTILLERY | 25g | 10s | Bombard lane for 60 damage |
+
+### Tuning Economy
+
+Edit `ECONOMY` and `ACTIONS` in `src/game/data/economy.ts`.
+
+## 🏰 Barricade Progression
+
+The barricade has **three visual damage states**:
+
+| State | HP Range | Visual |
+|-------|----------|--------|
+| Healthy | >60% | Normal gray wall |
+| Damaged | 30-60% | Brown tint, 2 crack lines |
+| Critical | <30% | Red tint, 5 crack lines |
+
+**Repair** restores HP (green flash). **Reinforce** adds max HP (blue flash).
+
+## 🎯 Active Ability: Artillery Strike
+
+- Targets the lane with the most enemies automatically
+- Deals 60 damage to all enemies within radius
+- 5 sequential explosion VFX along the lane
+- Cost: 25 gold, 10s cooldown
+
+## 📊 HUD Elements
+
+| Position | Content |
+|----------|---------|
+| Top-left | Gold + kill count |
+| Top-center | Wave number, state (INCOMING/ENGAGE/REST), enemy count |
+| Top-right | Defender HP bar, Barricade HP bar (color-coded) |
+| Bottom-center | Action bar: Repair, Reinforce, Artillery |
+| Bottom-right | Fullscreen toggle |
 
 ## 🎨 Character Renderer Architecture
 
 ### Current: Placeholder Silhouettes
 
-Units are rendered as modular silhouette shapes (head, torso, legs, accent, weapon) built from Phaser primitives. This is designed to be replaceable.
+Units use modular silhouette shapes (head, torso, legs, accent, weapon). Supports:
+- Muzzle flash, recoil animation, hit flash
+- Tier glow + label on upgrade
+- Depth sorting by Y position
 
 ### Future: Cutout-Rig Assets
 
-Each unit will load from:
-
-```
-assets/units/{unit_id}/
-  parts/           # Individual body part images
-  rig.json         # Skeletal hierarchy + pivots
-  animations.json  # Named animation tracks
-```
-
-Interfaces ready for this:
-- `UnitRenderDefinition` — render mode (placeholder vs rig), colors, muzzle offset
-- `UnitAssetManifest` — folder path, part keys, capability flags
-- `RigDefinition` — skeletal hierarchy with named parts
-- `AnimationSet` — named animation tracks with keyframes
+Each unit will load from `assets/units/{unit_id}/` with `parts/`, `rig.json`, `animations.json`.
 
 ## 📱 Mobile Features
 
-- **Responsive**: Layout scales to any screen via normalized coordinates
+- **Responsive**: Normalized coordinates scale to any screen
 - **Fullscreen**: Native browser fullscreen support
-- **Touch-First**: Tap-to-collect loot, readable HUD
+- **Touch-First**: Tap-to-collect loot, action bar buttons
 
 ## 🚀 Running
 
@@ -155,3 +214,13 @@ npm run dev
 ## 🔧 Tech Stack
 
 Phaser 3 · TypeScript · Vite · React · Tailwind CSS
+
+## 🔮 What Remains Stubbed/Future-Ready
+
+- Background image loading (currently procedural)
+- Cutout-rig character assets
+- Shop UI (currently simple action bar)
+- Sound effects
+- Save/load system
+- Multiple unit types per battle
+- Victory condition (max wave count)
