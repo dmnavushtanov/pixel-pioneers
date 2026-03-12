@@ -7,9 +7,12 @@ import { EnemySystem } from '../systems/EnemySystem';
 import { LootSystem } from '../systems/LootSystem';
 import { UpgradeSystem } from '../systems/UpgradeSystem';
 import { PLAYER_UNIT } from '../data/units';
+import { getBattlefield, DEFAULT_BATTLEFIELD_ID } from '../data/battlefields';
+import type { BattlefieldLayout } from '../types/BattlefieldDefinition';
 
 /**
- * BattleScene: 2D side-view barricade defense battlefield.
+ * BattleScene: config-driven 2D side-view barricade defense battlefield.
+ * All positions come from BattlefieldLayout — no hardcoded coordinates.
  */
 export class BattleScene extends Phaser.Scene {
   public slots: DefenderSlot[] = [];
@@ -22,45 +25,64 @@ export class BattleScene extends Phaser.Scene {
 
   public defenseLineX = 0;
   public lanesY: number[] = [];
+  
+  private layout!: BattlefieldLayout;
 
   constructor() {
     super({ key: 'BattleScene' });
   }
 
+  init(data?: { battlefieldId?: string }) {
+    const id = data?.battlefieldId ?? DEFAULT_BATTLEFIELD_ID;
+    this.layout = getBattlefield(id).layout;
+  }
+
   create() {
     const w = this.scale.width;
     const h = this.scale.height;
+    const layout = this.layout;
 
-    // 1. Battlefield Composition: Layers and Lanes
+    // 1. Background
     this.createBackground(w, h);
-    
-    // Define 3 combat lanes
-    const laneHeight = h * 0.2;
-    const centerY = h * 0.5;
-    this.lanesY = [
-      centerY - laneHeight,
-      centerY,
-      centerY + laneHeight
-    ];
 
-    // Defense line at ~25% from left
-    this.defenseLineX = Math.floor(w * 0.25);
+    // 2. Resolve lane Y positions from config
+    this.lanesY = layout.lanes
+      .sort((a, b) => a.index - b.index)
+      .map(lane => Math.floor(lane.groundY * h));
 
-    // 2. Barricade / Defense Line
-    this.barricade = new Barricade(this, this.defenseLineX, this.lanesY[0] - 40, this.lanesY[2] + 40, 1000);
+    // 3. Defense line from config
+    this.defenseLineX = Math.floor(layout.barricade.lineX * w);
 
-    // 3. Defender Layout: Support multiple slots
+    // 4. Barricade from config
+    const barricadeTopY = Math.floor(layout.barricade.topY * h);
+    const barricadeBottomY = Math.floor(layout.barricade.bottomY * h);
+    this.barricade = new Barricade(
+      this,
+      this.defenseLineX,
+      barricadeTopY,
+      barricadeBottomY,
+      layout.barricade.health
+    );
+
+    // 5. Defender slots from config
     this.slots = [];
-    for (let i = 0; i < 3; i++) {
-      const slotX = this.defenseLineX - 50 - (i % 2 === 0 ? 0 : 20); // Zig-zag placement
-      const slot = new DefenderSlot(this, slotX, this.lanesY[i], i, i);
+    for (const slotDef of layout.defenderSlots) {
+      if (!slotDef.unlockedByDefault) continue;
+      const slotX = Math.floor(slotDef.position.x * w);
+      const slotY = Math.floor(slotDef.position.y * h);
+      const slot = new DefenderSlot(this, slotX, slotY, layout.defenderSlots.indexOf(slotDef), slotDef.laneIndex);
       slot.setUnit(PLAYER_UNIT);
       this.slots.push(slot);
     }
 
-    // 4. Systems
+    // 6. Enemy spawn zones → EnemySystem uses layout config
+    const spawnZone = layout.spawnZones[0];
+    const spawnMinX = Math.floor(spawnZone.rect.x * w);
+    const spawnMaxX = Math.floor((spawnZone.rect.x + spawnZone.rect.width) * w);
+    const enemyStopX = Math.floor(layout.enemyStopLineX * w);
+
     this.combatSystem = new CombatSystem(this);
-    this.enemySystem = new EnemySystem(this, this.defenseLineX, this.lanesY);
+    this.enemySystem = new EnemySystem(this, enemyStopX, this.lanesY, spawnMinX, spawnMaxX);
 
     this.lootSystem = new LootSystem(this, (gold) => {
       this.events.emit('goldChanged', gold);
@@ -77,42 +99,53 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private createBackground(w: number, h: number) {
-    // Background — dark battlefield dirt/mud
+    // Procedural background (replaced by image when available)
     this.add.rectangle(w / 2, h / 2, w, h, 0x1e1e1a);
 
-    // Grid-like perspective lines for depth feeling
+    // Grid lines for depth
     const graphics = this.add.graphics();
     graphics.lineStyle(1, 0x2a2a24, 0.4);
     for (let i = 0; i < 10; i++) {
       const ly = (h / 10) * i;
       graphics.lineBetween(0, ly, w, ly);
     }
-    
-    // Environmental props (broken stuff, debris)
+
+    // Debris
     for (let i = 0; i < 15; i++) {
       const px = Math.random() * w;
       const py = Math.random() * h;
       const scale = 0.5 + (py / h) * 0.5;
-      
       const debris = this.add.circle(px, py, 2 + Math.random() * 4, 0x111111, 0.2);
       debris.setScale(scale);
       debris.setDepth(py / 10);
     }
 
-    // "No man's land" shading
+    // No man's land shading
     const nml = this.add.rectangle(w * 0.6, h / 2, w * 0.7, h, 0x000000, 0.1);
     nml.setDepth(0);
+
+    // Render prop anchors from layout
+    if (this.layout.propAnchors) {
+      for (const prop of this.layout.propAnchors) {
+        const px = prop.position.x * w;
+        const py = prop.position.y * h;
+        // Placeholder prop visual
+        const propGfx = this.add.rectangle(px, py, 14, 14, 0x5d4037, 0.4);
+        propGfx.setStrokeStyle(1, 0x3e2723);
+        propGfx.setAngle(Math.random() * 30 - 15);
+        propGfx.setScale(prop.scale);
+        propGfx.setDepth(py / 10);
+      }
+    }
   }
 
   update(_time: number, delta: number) {
     if (this.gameOver) return;
 
-    // Update enemy spawning and movement
-    this.enemySystem.update(delta, this.defenseLineX, 0); // targetX is defense line
+    this.enemySystem.update(delta, this.defenseLineX, 0);
 
-    // Run combat for each defender
     const allDefenders = this.slots.map(s => s.unit).filter((u): u is PlayerUnit => u !== null);
-    
+
     const killed = this.combatSystem.update(
       allDefenders,
       this.enemySystem.enemies,
@@ -120,29 +153,22 @@ export class BattleScene extends Phaser.Scene {
       this.barricade
     );
 
-    // Handle killed enemies
     for (const enemy of killed) {
-      // Find the defender who got the kill (currently combatSystem doesn't track this easily, 
-      // let's just give it to the first one for now or keep a simple global kills)
-      // Actually, let's just use the first defender for kill tracking in this simple refactor
       if (allDefenders.length > 0) {
         this.upgradeSystem.registerKill(allDefenders[0], enemy);
         this.events.emit('killsChanged', allDefenders[0].kills);
       }
-      
       this.lootSystem.spawnLoot(enemy);
       enemy.playDeath();
       this.enemySystem.removeEnemy(enemy);
     }
 
-    // Emit HUD updates
     const avgHealth = allDefenders.reduce((sum, d) => sum + d.currentHealth, 0);
     const maxHealth = allDefenders.reduce((sum, d) => sum + d.effectiveStats.maxHealth, 0);
-    
+
     this.events.emit('healthChanged', avgHealth, maxHealth);
     this.events.emit('barricadeChanged', this.barricade.currentHealth, this.barricade.maxHealth);
 
-    // Check defeat: all defenders dead or barricade gone (user choice: let's say barricade + defenders)
     const allDead = allDefenders.every(d => d.currentHealth <= 0);
     if (allDead) {
       this.gameOver = true;
@@ -150,7 +176,6 @@ export class BattleScene extends Phaser.Scene {
       this.events.emit('gameOver', totalKills, this.lootSystem.totalGold);
     }
 
-    // Cleanup
     this.lootSystem.cleanup();
     this.enemySystem.cleanup();
   }
