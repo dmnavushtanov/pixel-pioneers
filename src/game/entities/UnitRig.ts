@@ -34,7 +34,8 @@ export class UnitRig extends Phaser.GameObjects.Container {
         image = new Phaser.GameObjects.Image(scene, 0, 0, textureKey);
       } else {
         // Create a fallback colored rect texture on the fly if needed
-        const gfx = scene.add.graphics();
+        const gfx = new Phaser.GameObjects.Graphics(scene);
+        scene.add.existing(gfx);
         gfx.setVisible(false);
         // Generate a random color based on part name hash for variety
         const hash = part.name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
