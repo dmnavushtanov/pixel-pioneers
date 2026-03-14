@@ -1,12 +1,12 @@
 export type { UnitDefinition, UnitStats, UpgradeTier } from './UnitDefinition';
 export type { WeaponDefinition, ProjectileConfig } from './WeaponDefinition';
 export type { EnemyDefinition, GoldDrop } from './EnemyDefinition';
-export type { RigDefinition, RigPart, RigPartName } from './RigDefinition';
+export type { RigDefinition, RigPartDefinition, Vec2 as RigVec2 } from './RigDefinition';
 export type {
-  AnimationDefinition,
-  AnimationKeyframe,
+  AnimationClip,
   AnimationTrack,
   AnimationSet,
+  Keyframe,
 } from './AnimationDefinition';
 export type {
   BattlefieldDefinition,

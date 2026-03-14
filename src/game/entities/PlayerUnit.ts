@@ -27,10 +27,7 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
     this.effectiveStats = { ...def.baseStats };
     this.weapon = WEAPONS[def.weaponId];
 
-    // Glow for tier upgrades
     this.glowGfx = new Phaser.GameObjects.Arc(scene, 0, 0, 30, 0, 360, false, def.color, 0.15);
-
-    // Tier label
     this.tierLabel = new Phaser.GameObjects.Text(scene, 0, -55, def.name, {
       fontSize: '10px',
       color: '#ffffff',
@@ -41,31 +38,24 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
     this.add([this.glowGfx, this.tierLabel]);
     scene.add.existing(this);
 
-    // Load Rig
     this.loadRig();
   }
 
-  private async loadRig() {
+  private loadRig() {
     const loader = new UnitLoader(this.scene);
-    // Map unit ID to rig ID (e.g. 'soldier' -> 'soldier')
-    // For now assuming unit.id matches rig id or mapping it
-    const rigId = 'soldier'; // Hardcoded for prototype as per request (1 defender unit)
-    
-    const data = await loader.loadUnit(rigId);
+    const rigId = this.def.rigId ?? 'bulgarian_rifleman';
+    const data = loader.loadUnit(rigId);
     
     this.rig = new UnitRig(this.scene, 0, 0, data.rig, data.anims);
-    // Scale down a bit if the generated parts are large
-    this.rig.setScale(0.8); 
-    this.addAt(this.rig, 1); // Add above glow, below label
-    
+    this.rig.setScale(0.8);
+    this.addAt(this.rig, 1);
     this.rig.play('idle');
   }
 
   playShootAnimation() {
     if (this.rig) {
       this.rig.play('shoot');
-      // Return to idle after shoot
-      this.scene.time.delayedCall(200, () => {
+      this.scene.time.delayedCall(250, () => {
         if (this.rig) this.rig.play('idle');
       });
     }
@@ -103,10 +93,7 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
       range: base.range * (tier.statMultipliers.range ?? 1),
       moveSpeed: base.moveSpeed * (tier.statMultipliers.moveSpeed ?? 1),
     };
-    // Heal on upgrade
     this.currentHealth = this.effectiveStats.maxHealth;
-
-    // Visual upgrade feedback
     this.tierLabel.setText(`${this.def.name} [${tier.name}]`);
     if (tier.glowColor) {
       this.glowGfx.setFillStyle(tier.glowColor, 0.4);
@@ -121,8 +108,6 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
 
   takeDamage(amount: number): boolean {
     this.currentHealth = Math.max(0, this.currentHealth - amount);
-    
-    // Flash effect
     if (this.rig) {
       this.scene.tweens.add({
         targets: this.rig,
@@ -131,7 +116,6 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
         yoyo: true
       });
     }
-
     return this.currentHealth <= 0;
   }
 
@@ -147,13 +131,11 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
     return this.effectiveStats.attackSpeed * (this.weapon.attackSpeed / this.def.baseStats.attackSpeed);
   }
   
-  // Helper for CombatSystem to find muzzle position
   getMuzzlePosition(): { x: number, y: number } {
     if (this.rig) {
       const socket = this.rig.getSocketWorldPosition('muzzle');
       if (socket) return socket;
     }
-    // Fallback
     const matrix = this.getWorldTransformMatrix();
     return { x: matrix.tx + 20, y: matrix.ty };
   }

@@ -1,7 +1,17 @@
 import Phaser from 'phaser';
+import { UnitLoader } from '../systems/UnitLoader';
+
+/** Standard parts shared by all unit types */
+const STANDARD_PARTS = ['head.png', 'torso.png', 'left_arm.png', 'right_arm.png', 'left_leg.png', 'right_leg.png', 'weapon.png'];
+
+/** All unit IDs that need preloading */
+const UNIT_IDS = [
+  'bulgarian_rifleman',
+  'ottoman_rifleman',
+];
 
 /**
- * BootScene: preload placeholder assets and show loading bar.
+ * BootScene: preload unit assets and show loading bar.
  */
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -33,8 +43,11 @@ export class BootScene extends Phaser.Scene {
       label.destroy();
     });
 
-    // No real assets to load yet; simulate a brief load
-    // Future: load rig parts, spritesheets, audio here
+    // Preload all unit assets
+    for (const unitId of UNIT_IDS) {
+      UnitLoader.preloadUnit(this, unitId, STANDARD_PARTS);
+      UnitLoader.preloadConfigs(this, unitId);
+    }
   }
 
   create() {

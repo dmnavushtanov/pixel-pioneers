@@ -20,30 +20,23 @@ export class EnemyUnit extends Phaser.GameObjects.Container {
     this.def = def;
     this.currentHealth = def.health;
 
-    // HP bar (minimalist)
     this.hpBar = new Phaser.GameObjects.Rectangle(scene, 0, -40, 30, 4, 0x44cc44);
     const hpBg = new Phaser.GameObjects.Rectangle(scene, 0, -40, 30, 4, 0x330000);
 
     this.add([hpBg, this.hpBar]);
     scene.add.existing(this);
 
-    // Load Rig
     this.loadRig();
   }
 
-  private async loadRig() {
+  private loadRig() {
     const loader = new UnitLoader(this.scene);
-    // Map unit ID to rig ID
-    // 'grunt' -> 'grunt'
-    // others -> fallback
-    const rigId = this.def.id === 'grunt' ? 'grunt' : 'grunt'; 
-    
-    const data = await loader.loadUnit(rigId);
+    const rigId = this.def.rigId ?? 'ottoman_rifleman';
+    const data = loader.loadUnit(rigId);
     
     this.rig = new UnitRig(this.scene, 0, 0, data.rig, data.anims);
-    this.rig.setScale(-0.8, 0.8); // Face left by flipping X scale
-    this.addAt(this.rig, 0); // Add behind HP bar
-    
+    this.rig.setScale(-0.8, 0.8); // Face left
+    this.addAt(this.rig, 0);
     this.rig.play('move');
   }
 
@@ -59,7 +52,6 @@ export class EnemyUnit extends Phaser.GameObjects.Container {
     const ratio = this.currentHealth / this.def.health;
     this.hpBar.setScale(ratio, 1);
 
-    // Flash white
     if (this.rig) {
       this.scene.tweens.add({
         targets: this.rig,
@@ -98,27 +90,20 @@ export class EnemyUnit extends Phaser.GameObjects.Container {
   playAttackAnimation() {
     if (this.rig) {
       this.rig.play('attack');
-      // Return to move/idle handled by logic or loop
-      // Actually, attack is one-shot. 
-      // We should likely let it finish or have logic to switch back.
-      // For now, let's rely on moveToward being called every frame to switch back to 'move' 
-      // if it's not attacking.
-      // But CombatSystem calls this once. 
-      // Let's force it back to idle after delay if needed, 
-      // OR let moveToward override it next frame?
-      // If moveToward is called every frame, it will switch to 'move' immediately.
-      // We should add a state check.
     }
   }
 
   playDeath(): Promise<void> {
+    // Play death animation on rig
+    if (this.rig) {
+      this.rig.play('death');
+    }
     return new Promise((resolve) => {
       this.scene.tweens.add({
         targets: this,
         alpha: 0,
         y: this.y + 20,
-        angle: 45,
-        duration: 400,
+        duration: 600,
         onComplete: () => {
           this.destroy();
           resolve();

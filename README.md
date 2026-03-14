@@ -43,49 +43,118 @@ src/
 │       ├── RigDefinition.ts    # Part hierarchy & sockets
 │       ├── AnimationDefinition.ts # Keyframe tracks
 │       └── ...
+public/
+├── assets/
+│   └── units/                  # Unit cutout part assets
+│       ├── bulgarian_rifleman/ # Defender faction
+│       │   ├── parts/          # PNG body parts
+│       │   ├── rig.json        # Skeleton hierarchy
+│       │   ├── animations.json # Animation clips
+│       │   └── manifest.json   # Asset list
+│       └── ottoman_rifleman/   # Attacker faction
+│           ├── parts/
+│           ├── rig.json
+│           ├── animations.json
+│           └── manifest.json
+├── battlefields/
+│   └── desert_outpost/
+│       └── layout.json
 ```
 
 ## 🎨 Character Animation Pipeline
 
-The game now uses a **Cutout-Rig System** for units (`UnitRig.ts`), replacing static sprites.
+The game uses a **Cutout-Rig System** for units (`UnitRig.ts`), replacing static sprites.
 
-### Folder Structure
+### Unit Folder Structure
 
-Each unit (e.g., `soldier`, `grunt`) is defined in `assets/units/{unit_id}/`:
+Each unit is defined in `public/assets/units/{unit_id}/`:
 
 ```
-assets/units/soldier/
+public/assets/units/bulgarian_rifleman/
   parts/                # PNG images for each body part
     head.png
     torso.png
+    left_arm.png
+    right_arm.png
+    left_leg.png
+    right_leg.png
     weapon.png
-    ...
-  rig.json              # Hierarchy, pivots, z-index
+  rig.json              # Hierarchy, pivots, z-index, sockets
   animations.json       # Animation clips & keyframes
-  manifest.json         # (Optional) Asset list
+  manifest.json         # Asset list and metadata
 ```
 
-### 1. Rig Definition (`rig.json`)
+### Standard Parts (7 per unit)
 
-Defines the skeleton structure. Each part has:
-- `parent`: Name of parent part (defaults to root).
-- `image`: Filename in `parts/`.
-- `pivot`: Normalized (0-1) rotation point.
-- `position`: Offset from parent.
-- `zIndex`: Local sorting order.
-- `sockets`: Attachment points for gameplay logic (e.g., `muzzle` for projectiles).
+| Part | Purpose |
+|------|---------|
+| `head` | Head with headwear (kalpak/fez) |
+| `torso` | Upper body with jacket |
+| `left_arm` | Left arm (support arm) |
+| `right_arm` | Right arm (weapon arm) |
+| `left_leg` | Left leg |
+| `right_leg` | Right leg |
+| `weapon` | Rifle or melee weapon |
 
-### 2. Animations (`animations.json`)
+### Rig Hierarchy
 
-Contains named clips (e.g., `idle`, `shoot`, `move`).
-- **Tracks**: Property overrides (`rotation`, `x`, `y`, `scale`) for specific parts.
-- **Keyframes**: Time-stamped values interpolated at runtime.
+```
+root
+ ├─ torso (pivot: lower center)
+ │   ├─ head (pivot: neck area)
+ │   ├─ left_arm (pivot: shoulder)
+ │   ├─ right_arm (pivot: shoulder)
+ │   └─ weapon (pivot: grip, child of right_arm)
+ ├─ left_leg (pivot: hip)
+ └─ right_leg (pivot: hip)
+```
 
-### 3. Procedural Fallback
+### Rig Definition (`rig.json`)
 
-If assets are missing, `UnitLoader.ts` automatically generates:
-- **Placeholder Textures**: Colored shapes based on part names (e.g., distinct colors for head vs torso).
-- **Default Rigs/Anims**: Procedural definitions for 'soldier' and 'grunt' ensuring the game is always playable.
+Each part has:
+- `parent`: Name of parent part (root if undefined)
+- `image`: Filename in `parts/`
+- `pivot`: Normalized (0-1) rotation point
+- `position`: Offset from parent
+- `rotation`: Base rotation in degrees
+- `scale`: Base scale
+- `zIndex`: Local sorting order
+- `sockets`: Attachment points (e.g., `muzzle` for projectiles)
+
+### Animations (`animations.json`)
+
+Contains named clips: `idle`, `move`, `shoot`, `attack`, `death`.
+- **Tracks**: Property overrides (`rotation`, `x`, `y`, `scaleX`, `scaleY`) for specific parts
+- **Keyframes**: Time-stamped values (0-1 normalized) interpolated at runtime
+
+| Animation | Duration | Loop | Purpose |
+|-----------|----------|------|---------|
+| `idle` | 1000-1200ms | Yes | Subtle breathing/sway |
+| `move` | 500-600ms | Yes | Walking cycle |
+| `shoot` | 200-250ms | No | Recoil from weapon |
+| `attack` | 400-500ms | No | Melee strike |
+| `death` | 600ms | No | Fall/collapse |
+
+### Procedural Fallback
+
+If assets are missing, `UnitLoader.ts` automatically generates colored placeholder shapes, ensuring the game is always playable.
+
+### How to Add a New Unit
+
+1. Create folder: `public/assets/units/{unit_id}/parts/`
+2. Add 7 PNG body part images (transparent background)
+3. Create `rig.json` with part hierarchy and pivots
+4. Create `animations.json` with animation clips
+5. Create `manifest.json` listing all parts
+6. Add the unit ID to `BootScene.ts` `UNIT_IDS` array
+7. Reference `rigId` in the unit/enemy definition data
+
+### Factions
+
+| Faction | Color Palette | Style |
+|---------|-------------|-------|
+| **Bulgarian** (defenders) | Browns, muted blues, earthy | Insurgent/chetnik militia |
+| **Ottoman** (attackers) | Dark blue, red piping, fez | Formal military |
 
 ## 🗺️ Battlefield System
 
@@ -146,6 +215,15 @@ npm run dev
 - **Responsive**: Normalized coordinates scale to any screen size (Landscape).
 - **Fullscreen**: Interactive toggle in the HUD.
 - **Touch**: Tap-to-collect loot and tactile action buttons.
+
+## 🔮 Phase 2 Upgrades (Future)
+
+- Separate hat/beard parts for distinct silhouettes
+- Upper/lower arm split for better shooting poses
+- Upper/lower leg split for smoother walk cycles
+- Melee weapon secondary parts (bayonet, sword)
+- Rider + horse split rig (ottoman_horseman)
+- Multiple battlefield backgrounds with different layouts
 
 ## 🔧 Tech Stack
 

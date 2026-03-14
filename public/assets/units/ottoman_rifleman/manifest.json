@@ -1,0 +1,6 @@
+{
+  "id": "ottoman_rifleman",
+  "name": "Ottoman Rifleman",
+  "parts": ["head.png", "torso.png", "left_arm.png", "right_arm.png", "left_leg.png", "right_leg.png", "weapon.png"],
+  "tags": ["enemy", "ottoman", "rifleman"]
+}

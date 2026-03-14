@@ -2,19 +2,21 @@ import type { EnemyDefinition } from '../types';
 
 export const ENEMY_TYPES: EnemyDefinition[] = [
   {
-    id: 'grunt',
-    name: 'Grunt',
+    id: 'ottoman_rifleman',
+    name: 'Ottoman Rifleman',
+    rigId: 'ottoman_rifleman',
     health: 30,
     damage: 5,
     attackSpeed: 1,
     moveSpeed: 40,
     goldDrop: { min: 1, max: 3 },
-    color: 0xcc4444,
+    color: 0x2c3e6b,
     size: 14,
   },
   {
-    id: 'brute',
-    name: 'Brute',
+    id: 'ottoman_brute',
+    name: 'Ottoman Brute',
+    rigId: 'ottoman_rifleman',
     health: 80,
     damage: 12,
     attackSpeed: 0.5,
@@ -24,8 +26,9 @@ export const ENEMY_TYPES: EnemyDefinition[] = [
     size: 20,
   },
   {
-    id: 'runner',
-    name: 'Runner',
+    id: 'ottoman_runner',
+    name: 'Ottoman Runner',
+    rigId: 'ottoman_rifleman',
     health: 15,
     damage: 3,
     attackSpeed: 1.5,
