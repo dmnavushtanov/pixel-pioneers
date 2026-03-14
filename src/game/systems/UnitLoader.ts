@@ -57,6 +57,7 @@ export class UnitLoader {
       const key = `unit_${unitId}_${part.name}`;
       if (!this.scene.textures.exists(key)) {
         // Generate placeholder texture
+        // @ts-ignore
         const gfx = this.scene.make.graphics({ x: 0, y: 0, add: false });
         
         // Size based on part name approximation (or just standard)
