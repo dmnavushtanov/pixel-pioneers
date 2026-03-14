@@ -4,7 +4,7 @@ import { ACTIONS } from '../data/economy';
 import type { WaveState } from '../systems/WaveSystem';
 
 /**
- * UIScene: Full HUD with wave info, resources, action bar, and game-over screen.
+ * UIScene: Full HUD with wave info, resources, action bar, speed controls, and game-over screen.
  */
 export class UIScene extends Phaser.Scene {
   private battleScene!: BattleScene;
@@ -26,6 +26,10 @@ export class UIScene extends Phaser.Scene {
     cooldownOverlay: Phaser.GameObjects.Rectangle;
     costLabel: Phaser.GameObjects.Text;
   }> = new Map();
+
+  // Speed controls
+  private speedButtons: Map<number, Phaser.GameObjects.Text> = new Map();
+  private currentSpeed = 1;
 
   constructor() {
     super({ key: 'UIScene' });
@@ -89,6 +93,27 @@ export class UIScene extends Phaser.Scene {
       else this.scale.startFullscreen();
     });
 
+    // === SPEED CONTROLS ===
+    const speeds = [1, 2, 3];
+    const speedY = h - 35;
+    const speedStartX = w - 45;
+    
+    speeds.forEach((s, i) => {
+      const btn = this.add.text(speedStartX + (i * 35), speedY, `${s}x`, {
+        fontSize: '12px', 
+        color: s === 1 ? '#ffd700' : '#888888', 
+        fontFamily: 'monospace',
+        fontStyle: 'bold',
+        backgroundColor: '#000000aa',
+        padding: { x: 4, y: 2 }
+      })
+      .setOrigin(1, 1)
+      .setInteractive({ useHandCursor: true });
+
+      btn.on('pointerdown', () => this.setGameSpeed(s));
+      this.speedButtons.set(s, btn);
+    });
+
     // === Events ===
     this.battleScene.events.on('goldChanged', (gold: number) => {
       this.goldText.setText(`💰 ${gold}`);
@@ -136,6 +161,22 @@ export class UIScene extends Phaser.Scene {
     });
     this.battleScene.events.on('gameOver', (kills: number, gold: number, wave: number) => {
       this.showGameOver(kills, gold, wave);
+    });
+  }
+
+  private setGameSpeed(multiplier: number) {
+    this.currentSpeed = multiplier;
+    this.battleScene.events.emit('changeSpeed', multiplier);
+    
+    // Update visual state of buttons
+    this.speedButtons.forEach((btn, s) => {
+      if (s === multiplier) {
+        btn.setColor('#ffd700');
+        btn.setAlpha(1);
+      } else {
+        btn.setColor('#888888');
+        btn.setAlpha(0.6);
+      }
     });
   }
 

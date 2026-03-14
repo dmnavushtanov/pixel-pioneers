@@ -98,6 +98,10 @@ export class WaveSystem {
     // Move enemies
     for (const enemy of this.enemies) {
       if (enemy.isDead) continue;
+      
+      // Update animation rig
+      enemy.update(delta);
+
       if (enemy.x > this.stopLineX + enemy.def.size + 10) {
         enemy.moveToward(this.stopLineX, enemy.y, delta);
       } else {

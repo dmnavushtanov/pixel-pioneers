@@ -27,7 +27,8 @@ export class BattleScene extends Phaser.Scene {
 
   public defenseLineX = 0;
   public lanesY: number[] = [];
-
+  
+  private timeScale = 1;
   private layout!: BattlefieldLayout;
 
   constructor() {
@@ -90,6 +91,13 @@ export class BattleScene extends Phaser.Scene {
 
     this.gameOver = false;
 
+    // Game speed control
+    this.events.on('changeSpeed', (multiplier: number) => {
+      this.timeScale = multiplier;
+      this.time.timeScale = multiplier;
+      this.tweens.timeScale = multiplier;
+    });
+
     // Launch UI overlay
     this.scene.launch('UIScene', { battleScene: this });
   }
@@ -129,16 +137,19 @@ export class BattleScene extends Phaser.Scene {
   update(_time: number, delta: number) {
     if (this.gameOver) return;
 
+    // Apply manual time scaling to delta for systems
+    const scaledDelta = delta * this.timeScale;
+
     // Update systems
-    this.waveSystem.update(delta);
-    this.abilitySystem.update(delta);
+    this.waveSystem.update(scaledDelta);
+    this.abilitySystem.update(scaledDelta);
 
     const allDefenders = this.slots.map(s => s.unit).filter((u): u is PlayerUnit => u !== null);
 
     const killed = this.combatSystem.update(
       allDefenders,
       this.waveSystem.enemies,
-      delta,
+      scaledDelta,
       this.barricade
     );
 

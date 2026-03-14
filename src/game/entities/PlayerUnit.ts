@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import type { UnitDefinition, UnitStats, WeaponDefinition } from '../types';
 import { WEAPONS } from '../data/weapons';
+import { UnitRig } from './UnitRig';
+import { UnitLoader } from '../systems/UnitLoader';
 
 /**
- * Player unit: stationary auto-attacker with visual silhouette.
+ * Player unit: stationary auto-attacker with cutout rig animation.
  */
 export class PlayerUnit extends Phaser.GameObjects.Container {
   public def: UnitDefinition;
@@ -14,8 +16,7 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
   public weapon: WeaponDefinition;
   public attackCooldown = 0;
 
-  private bodyGfx: Phaser.GameObjects.Container;
-  private weaponGfx: Phaser.GameObjects.Rectangle;
+  private rig?: UnitRig;
   private glowGfx: Phaser.GameObjects.Arc;
   private tierLabel: Phaser.GameObjects.Text;
 
@@ -29,54 +30,51 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
     // Glow for tier upgrades
     this.glowGfx = new Phaser.GameObjects.Arc(scene, 0, 0, 30, 0, 360, false, def.color, 0.15);
 
-    // Character Silhouette (Cartoon style)
-    this.bodyGfx = new Phaser.GameObjects.Container(scene, 0, 0);
-    
-    // Head
-    const head = new Phaser.GameObjects.Arc(scene, 0, -18, 10, 0, 360, false, 0x111111);
-    // Torso
-    const torso = new Phaser.GameObjects.Rectangle(scene, 0, 0, 20, 28, 0x111111);
-    // Legs
-    const legL = new Phaser.GameObjects.Rectangle(scene, -6, 14, 8, 14, 0x111111);
-    const legR = new Phaser.GameObjects.Rectangle(scene, 6, 14, 8, 14, 0x111111);
-    
-    // Add colored accent (team color)
-    const accent = new Phaser.GameObjects.Rectangle(scene, 0, -2, 16, 6, def.color);
-
-    this.bodyGfx.add([legL, legR, torso, head, accent]);
-
-    // Weapon stub
-    this.weaponGfx = new Phaser.GameObjects.Rectangle(
-      scene, 12, 0, this.weapon.length, 6, 0x333333
-    ).setOrigin(0, 0.5);
-
     // Tier label
-    this.tierLabel = new Phaser.GameObjects.Text(scene, 0, -45, def.name, {
+    this.tierLabel = new Phaser.GameObjects.Text(scene, 0, -55, def.name, {
       fontSize: '10px',
       color: '#ffffff',
       fontFamily: 'monospace',
       backgroundColor: '#00000088'
     }).setOrigin(0.5);
 
-    this.add([this.glowGfx, this.bodyGfx, this.weaponGfx, this.tierLabel]);
+    this.add([this.glowGfx, this.tierLabel]);
     scene.add.existing(this);
+
+    // Load Rig
+    this.loadRig();
+  }
+
+  private async loadRig() {
+    const loader = new UnitLoader(this.scene);
+    // Map unit ID to rig ID (e.g. 'soldier' -> 'soldier')
+    // For now assuming unit.id matches rig id or mapping it
+    const rigId = 'soldier'; // Hardcoded for prototype as per request (1 defender unit)
+    
+    const data = await loader.loadUnit(rigId);
+    
+    this.rig = new UnitRig(this.scene, 0, 0, data.rig, data.anims);
+    // Scale down a bit if the generated parts are large
+    this.rig.setScale(0.8); 
+    this.addAt(this.rig, 1); // Add above glow, below label
+    
+    this.rig.play('idle');
   }
 
   playShootAnimation() {
-    this.scene.tweens.add({
-      targets: this.weaponGfx,
-      x: 8,
-      duration: 50,
-      yoyo: true,
-      ease: 'Quad.easeOut',
-    });
-    // Slight body kickback
-    this.scene.tweens.add({
-      targets: this.bodyGfx,
-      x: -2,
-      duration: 50,
-      yoyo: true,
-    });
+    if (this.rig) {
+      this.rig.play('shoot');
+      // Return to idle after shoot
+      this.scene.time.delayedCall(200, () => {
+        if (this.rig) this.rig.play('idle');
+      });
+    }
+  }
+
+  update(time: number, delta: number) {
+    if (this.rig) {
+      this.rig.update(delta);
+    }
   }
 
   addKill() {
@@ -125,12 +123,14 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
     this.currentHealth = Math.max(0, this.currentHealth - amount);
     
     // Flash effect
-    this.scene.tweens.add({
-      targets: this.bodyGfx,
-      alpha: 0.5,
-      duration: 50,
-      yoyo: true
-    });
+    if (this.rig) {
+      this.scene.tweens.add({
+        targets: this.rig,
+        alpha: 0.5,
+        duration: 50,
+        yoyo: true
+      });
+    }
 
     return this.currentHealth <= 0;
   }
@@ -145,5 +145,16 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
 
   getEffectiveAttackSpeed(): number {
     return this.effectiveStats.attackSpeed * (this.weapon.attackSpeed / this.def.baseStats.attackSpeed);
+  }
+  
+  // Helper for CombatSystem to find muzzle position
+  getMuzzlePosition(): { x: number, y: number } {
+    if (this.rig) {
+      const socket = this.rig.getSocketWorldPosition('muzzle');
+      if (socket) return socket;
+    }
+    // Fallback
+    const matrix = this.getWorldTransformMatrix();
+    return { x: matrix.tx + 20, y: matrix.ty };
   }
 }
