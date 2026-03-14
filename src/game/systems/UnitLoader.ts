@@ -1,190 +1,158 @@
 import Phaser from 'phaser';
-import type { RigDefinition, RigPartDefinition } from '../types/RigDefinition';
+import type { RigDefinition } from '../types/RigDefinition';
 import type { AnimationSet } from '../types/AnimationDefinition';
-import type { UnitAssetManifest } from '../types/UnitManifest';
 
 /**
- * UnitLoader: Manages loading of unit rig assets.
- * Generates procedural placeholders if assets are missing.
+ * UnitLoader: Loads unit rig assets from public/assets/units/{unitId}/.
+ * Falls back to procedural placeholders if JSON files are missing.
  */
 export class UnitLoader {
   private scene: Phaser.Scene;
+  private static cache: Map<string, { rig: RigDefinition; anims: AnimationSet }> = new Map();
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
   }
 
   /**
-   * Loads a unit's assets.
-   * In a real implementation, this would load manifest.json first, then the files listed.
-   * For this prototype, we'll simulate loading and return generated data.
+   * Preload all part images for a unit. Call during scene preload().
    */
-  public async loadUnit(unitId: string): Promise<{ rig: RigDefinition, anims: AnimationSet }> {
-    // 1. In a real app, we'd do:
-    // const manifest = await this.loadJson(`assets/units/${unitId}/manifest.json`);
-    // const rig = await this.loadJson(`assets/units/${unitId}/rig.json`);
-    // const anims = await this.loadJson(`assets/units/${unitId}/animations.json`);
-    // await this.loadImages(manifest.parts);
+  static preloadUnit(scene: Phaser.Scene, unitId: string, partNames: string[]) {
+    const basePath = `assets/units/${unitId}/parts`;
+    for (const part of partNames) {
+      const key = `unit_${unitId}_${part.replace('.png', '')}`;
+      if (!scene.textures.exists(key)) {
+        scene.load.image(key, `${basePath}/${part}`);
+      }
+    }
+  }
 
-    // 2. For Prototype: Generate data on the fly based on ID
-    // We will create distinct rigs for 'soldier' and 'grunt' to prove the system works.
-    
-    console.log(`[UnitLoader] Loading/Generating unit: ${unitId}`);
-    
-    let rig: RigDefinition;
-    let anims: AnimationSet;
+  /**
+   * Preload rig.json and animations.json for a unit.
+   */
+  static preloadConfigs(scene: Phaser.Scene, unitId: string) {
+    scene.load.json(`rig_${unitId}`, `assets/units/${unitId}/rig.json`);
+    scene.load.json(`anims_${unitId}`, `assets/units/${unitId}/animations.json`);
+  }
 
-    if (unitId === 'soldier') {
-      rig = this.createSoldierRig();
-      anims = this.createSoldierAnims();
-    } else if (unitId === 'grunt') {
-      rig = this.createGruntRig();
-      anims = this.createGruntAnims();
-    } else {
-      // Generic fallback
-      rig = this.createGenericRig(unitId);
-      anims = this.createGenericAnims();
+  /**
+   * After preload, call this to get rig + anims from cache.
+   */
+  public loadUnit(unitId: string): { rig: RigDefinition; anims: AnimationSet } {
+    // Check memory cache
+    if (UnitLoader.cache.has(unitId)) {
+      return UnitLoader.cache.get(unitId)!;
     }
 
-    // 3. Ensure textures exist (Procedural generation)
+    // Try loading from preloaded JSON
+    let rig: RigDefinition | undefined;
+    let anims: AnimationSet | undefined;
+
+    try {
+      const rigData = this.scene.cache.json.get(`rig_${unitId}`);
+      if (rigData) rig = rigData as RigDefinition;
+    } catch { /* fallback */ }
+
+    try {
+      const animData = this.scene.cache.json.get(`anims_${unitId}`);
+      if (animData) anims = animData as AnimationSet;
+    } catch { /* fallback */ }
+
+    // Fallback to procedural if no JSON
+    if (!rig) {
+      console.warn(`[UnitLoader] No rig.json for ${unitId}, using procedural fallback`);
+      rig = this.createFallbackRig(unitId);
+    }
+    if (!anims) {
+      console.warn(`[UnitLoader] No animations.json for ${unitId}, using procedural fallback`);
+      anims = this.createFallbackAnims();
+    }
+
+    // Ensure textures exist
     this.ensureTextures(unitId, rig);
 
-    return { rig, anims };
+    const data = { rig, anims };
+    UnitLoader.cache.set(unitId, data);
+    return data;
   }
 
   private ensureTextures(unitId: string, rig: RigDefinition) {
     for (const part of rig.parts) {
       const key = `unit_${unitId}_${part.name}`;
       if (!this.scene.textures.exists(key)) {
-        // Generate placeholder texture
-        // @ts-ignore
-        const gfx = this.scene.make.graphics({ x: 0, y: 0, add: false });
-        
-        // Size based on part name approximation (or just standard)
-        let w = 20, h = 30;
-        let color = 0x888888;
-        
+        const gfx = this.scene.add.graphics();
+        gfx.setVisible(false);
+
+        let w = 20, h = 30, color = 0x888888;
         if (part.name.includes('head')) { w = 24; h = 24; color = 0xffccaa; }
-        else if (part.name.includes('torso')) { w = 32; h = 40; color = unitId === 'soldier' ? 0x4488ff : 0xcc4444; }
-        else if (part.name.includes('arm')) { w = 12; h = 24; color = 0x555555; }
-        else if (part.name.includes('leg')) { w = 14; h = 28; color = 0x333333; }
-        else if (part.name.includes('weapon')) { w = 40; h = 10; color = 0x222222; }
-        
+        else if (part.name.includes('torso')) { w = 32; h = 40; color = unitId.includes('bulgarian') ? 0x6b4c2a : 0x2c3e6b; }
+        else if (part.name.includes('arm')) { w = 12; h = 24; color = unitId.includes('bulgarian') ? 0x5a3e1f : 0x253050; }
+        else if (part.name.includes('leg')) { w = 14; h = 28; color = unitId.includes('bulgarian') ? 0x3d2b1a : 0x2a3555; }
+        else if (part.name.includes('weapon')) { w = 40; h = 10; color = 0x3a2a1a; }
+
         gfx.fillStyle(color);
         if (part.name.includes('head')) gfx.fillCircle(12, 12, 12);
         else gfx.fillRect(0, 0, w, h);
-        
+
         gfx.generateTexture(key, Math.max(w, 24), Math.max(h, 24));
+        gfx.destroy();
       }
     }
   }
 
-  // === SOLDIER DATA ===
-
-  private createSoldierRig(): RigDefinition {
+  private createFallbackRig(unitId: string): RigDefinition {
     return {
-      id: 'soldier',
+      id: unitId,
       parts: [
-        { name: 'hips', image: 'hips.png', pivot: { x: 0.5, y: 0.5 }, position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 10 },
-        { name: 'torso', parent: 'hips', image: 'torso.png', pivot: { x: 0.5, y: 0.9 }, position: { x: 0, y: -5 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 15 },
-        { name: 'head', parent: 'torso', image: 'head.png', pivot: { x: 0.5, y: 0.9 }, position: { x: 0, y: -35 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 20 },
-        { name: 'upper_arm_r', parent: 'torso', image: 'upper_arm.png', pivot: { x: 0.5, y: 0.1 }, position: { x: 12, y: -30 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 18 },
-        { name: 'lower_arm_r', parent: 'upper_arm_r', image: 'lower_arm.png', pivot: { x: 0.5, y: 0.1 }, position: { x: 0, y: 20 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 19 },
-        { name: 'weapon', parent: 'lower_arm_r', image: 'weapon.png', pivot: { x: 0.2, y: 0.5 }, position: { x: 0, y: 15 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 25 },
-        { name: 'upper_arm_l', parent: 'torso', image: 'upper_arm.png', pivot: { x: 0.5, y: 0.1 }, position: { x: -12, y: -30 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 5 },
-        { name: 'leg_r', parent: 'hips', image: 'leg.png', pivot: { x: 0.5, y: 0.1 }, position: { x: 8, y: 5 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 9 },
-        { name: 'leg_l', parent: 'hips', image: 'leg.png', pivot: { x: 0.5, y: 0.1 }, position: { x: -8, y: 5 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 8 },
+        { name: 'left_leg',  image: 'left_leg.png',  pivot: { x: 0.5, y: 0.1 }, position: { x: -6, y: 8 },  rotation: 0, scale: { x: 1, y: 1 }, zIndex: 5 },
+        { name: 'right_leg', image: 'right_leg.png', pivot: { x: 0.5, y: 0.1 }, position: { x: 6, y: 8 },   rotation: 0, scale: { x: 1, y: 1 }, zIndex: 6 },
+        { name: 'torso',     image: 'torso.png',     pivot: { x: 0.5, y: 0.85 }, position: { x: 0, y: 0 },  rotation: 0, scale: { x: 1, y: 1 }, zIndex: 10 },
+        { name: 'head',      parent: 'torso', image: 'head.png', pivot: { x: 0.5, y: 0.9 }, position: { x: 0, y: -35 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 20 },
+        { name: 'left_arm',  parent: 'torso', image: 'left_arm.png',  pivot: { x: 0.7, y: 0.1 }, position: { x: -10, y: -28 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 8 },
+        { name: 'right_arm', parent: 'torso', image: 'right_arm.png', pivot: { x: 0.3, y: 0.1 }, position: { x: 10, y: -28 },  rotation: 0, scale: { x: 1, y: 1 }, zIndex: 18 },
+        { name: 'weapon',    parent: 'right_arm', image: 'weapon.png', pivot: { x: 0.25, y: 0.5 }, position: { x: 5, y: 18 }, rotation: -5, scale: { x: 1, y: 1 }, zIndex: 25 },
       ],
       sockets: {
-        muzzle: { part: 'weapon', offset: { x: 40, y: -2 } }
-      }
+        muzzle: { part: 'weapon', offset: { x: 45, y: -3 } },
+      },
     };
   }
 
-  private createSoldierAnims(): AnimationSet {
+  private createFallbackAnims(): AnimationSet {
     return {
       animations: [
         {
-          name: 'idle',
-          duration: 1000,
-          loop: true,
+          name: 'idle', duration: 1000, loop: true,
           tracks: [
-            { part: 'torso', property: 'y', keyframes: [{ time: 0, value: -5 }, { time: 0.5, value: -3 }, { time: 1, value: -5 }] },
-            { part: 'head', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 0.5, value: 2 }, { time: 1, value: 0 }] },
-            { part: 'upper_arm_r', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 0.5, value: -5 }, { time: 1, value: 0 }] },
-          ]
+            { part: 'torso', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 0.5, value: -2 }, { time: 1, value: 0 }] },
+          ],
         },
         {
-          name: 'shoot',
-          duration: 200,
-          loop: false,
+          name: 'move', duration: 600, loop: true,
           tracks: [
-            { part: 'upper_arm_r', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 0.1, value: -40 }, { time: 1, value: 0 }] },
-            { part: 'weapon', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 0.1, value: -10 }, { time: 1, value: 0 }] },
-          ]
-        }
-      ]
-    };
-  }
-
-  // === GRUNT DATA ===
-
-  private createGruntRig(): RigDefinition {
-    return {
-      id: 'grunt',
-      parts: [
-        { name: 'hips', image: 'hips.png', pivot: { x: 0.5, y: 0.5 }, position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 10 },
-        { name: 'torso', parent: 'hips', image: 'torso.png', pivot: { x: 0.5, y: 0.9 }, position: { x: 0, y: 0 }, rotation: 10, scale: { x: 1.1, y: 1 }, zIndex: 15 }, // Leaning forward
-        { name: 'head', parent: 'torso', image: 'head.png', pivot: { x: 0.5, y: 0.8 }, position: { x: 5, y: -30 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 20 },
-        { name: 'leg_r', parent: 'hips', image: 'leg.png', pivot: { x: 0.5, y: 0.1 }, position: { x: 6, y: 5 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 9 },
-        { name: 'leg_l', parent: 'hips', image: 'leg.png', pivot: { x: 0.5, y: 0.1 }, position: { x: -6, y: 5 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 8 },
-        { name: 'arm_r', parent: 'torso', image: 'arm.png', pivot: { x: 0.5, y: 0.1 }, position: { x: 10, y: -25 }, rotation: -20, scale: { x: 1, y: 1 }, zIndex: 18 },
+            { part: 'right_leg', property: 'rotation', keyframes: [{ time: 0, value: 15 }, { time: 0.5, value: -15 }, { time: 1, value: 15 }] },
+            { part: 'left_leg', property: 'rotation', keyframes: [{ time: 0, value: -15 }, { time: 0.5, value: 15 }, { time: 1, value: -15 }] },
+          ],
+        },
+        {
+          name: 'shoot', duration: 250, loop: false,
+          tracks: [
+            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 0.15, value: -30 }, { time: 1, value: 0 }] },
+          ],
+        },
+        {
+          name: 'attack', duration: 400, loop: false,
+          tracks: [
+            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 0.3, value: -60 }, { time: 0.5, value: 20 }, { time: 1, value: 0 }] },
+          ],
+        },
+        {
+          name: 'death', duration: 600, loop: false,
+          tracks: [
+            { part: 'torso', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 1, value: -90 }] },
+          ],
+        },
       ],
-      sockets: {
-        // Melee unit, maybe hit point
-        hit: { part: 'arm_r', offset: { x: 0, y: 20 } }
-      }
     };
-  }
-
-  private createGruntAnims(): AnimationSet {
-    return {
-      animations: [
-        {
-          name: 'idle',
-          duration: 800,
-          loop: true,
-          tracks: [
-            { part: 'torso', property: 'rotation', keyframes: [{ time: 0, value: 10 }, { time: 0.5, value: 15 }, { time: 1, value: 10 }] },
-          ]
-        },
-        {
-          name: 'move', // simple walk cycle
-          duration: 600,
-          loop: true,
-          tracks: [
-            { part: 'leg_r', property: 'rotation', keyframes: [{ time: 0, value: 20 }, { time: 0.5, value: -20 }, { time: 1, value: 20 }] },
-            { part: 'leg_l', property: 'rotation', keyframes: [{ time: 0, value: -20 }, { time: 0.5, value: 20 }, { time: 1, value: -20 }] },
-            { part: 'hips', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 0.25, value: -2 }, { time: 0.5, value: 0 }, { time: 0.75, value: -2 }, { time: 1, value: 0 }] }
-          ]
-        },
-        {
-            name: 'attack',
-            duration: 500,
-            loop: false,
-            tracks: [
-                { part: 'arm_r', property: 'rotation', keyframes: [{ time: 0, value: -20 }, { time: 0.4, value: -80 }, { time: 0.6, value: 20 }, { time: 1, value: -20 }] }
-            ]
-        }
-      ]
-    };
-  }
-
-  private createGenericRig(id: string): RigDefinition {
-      return this.createSoldierRig(); // fallback
-  }
-
-  private createGenericAnims(): AnimationSet {
-      return this.createSoldierAnims(); // fallback
   }
 }
