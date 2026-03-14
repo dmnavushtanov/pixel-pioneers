@@ -1,0 +1,15 @@
+{
+  "id": "ottoman_rifleman",
+  "parts": [
+    { "name": "left_leg",  "image": "left_leg.png",  "pivot": { "x": 0.5, "y": 0.1 }, "position": { "x": -6, "y": 8 },  "rotation": 0, "scale": { "x": 1, "y": 1 }, "zIndex": 5 },
+    { "name": "right_leg", "image": "right_leg.png", "pivot": { "x": 0.5, "y": 0.1 }, "position": { "x": 6, "y": 8 },   "rotation": 0, "scale": { "x": 1, "y": 1 }, "zIndex": 6 },
+    { "name": "torso",     "image": "torso.png",     "pivot": { "x": 0.5, "y": 0.85 }, "position": { "x": 0, "y": 0 },  "rotation": 0, "scale": { "x": 1, "y": 1 }, "zIndex": 10 },
+    { "name": "head",      "parent": "torso", "image": "head.png", "pivot": { "x": 0.5, "y": 0.9 }, "position": { "x": 0, "y": -35 }, "rotation": 0, "scale": { "x": 1, "y": 1 }, "zIndex": 20 },
+    { "name": "left_arm",  "parent": "torso", "image": "left_arm.png",  "pivot": { "x": 0.7, "y": 0.1 }, "position": { "x": -10, "y": -28 }, "rotation": 0, "scale": { "x": 1, "y": 1 }, "zIndex": 8 },
+    { "name": "right_arm", "parent": "torso", "image": "right_arm.png", "pivot": { "x": 0.3, "y": 0.1 }, "position": { "x": 10, "y": -28 },  "rotation": 0, "scale": { "x": 1, "y": 1 }, "zIndex": 18 },
+    { "name": "weapon",    "parent": "right_arm", "image": "weapon.png", "pivot": { "x": 0.25, "y": 0.5 }, "position": { "x": 5, "y": 18 }, "rotation": -5, "scale": { "x": 1, "y": 1 }, "zIndex": 25 }
+  ],
+  "sockets": {
+    "muzzle": { "part": "weapon", "offset": { "x": 45, "y": -3 } }
+  }
+}

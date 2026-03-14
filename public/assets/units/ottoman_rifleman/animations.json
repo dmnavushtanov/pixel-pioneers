@@ -1,0 +1,55 @@
+{
+  "animations": [
+    {
+      "name": "idle",
+      "duration": 1000,
+      "loop": true,
+      "tracks": [
+        { "part": "torso", "property": "y", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.5, "value": -2 }, { "time": 1, "value": 0 }] },
+        { "part": "head", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.5, "value": -2 }, { "time": 1, "value": 0 }] }
+      ]
+    },
+    {
+      "name": "move",
+      "duration": 500,
+      "loop": true,
+      "tracks": [
+        { "part": "right_leg", "property": "rotation", "keyframes": [{ "time": 0, "value": 18 }, { "time": 0.5, "value": -18 }, { "time": 1, "value": 18 }] },
+        { "part": "left_leg", "property": "rotation", "keyframes": [{ "time": 0, "value": -18 }, { "time": 0.5, "value": 18 }, { "time": 1, "value": -18 }] },
+        { "part": "torso", "property": "y", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.25, "value": -2 }, { "time": 0.5, "value": 0 }, { "time": 0.75, "value": -2 }, { "time": 1, "value": 0 }] },
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -8 }, { "time": 0.5, "value": 8 }, { "time": 1, "value": -8 }] },
+        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 8 }, { "time": 0.5, "value": -8 }, { "time": 1, "value": 8 }] }
+      ]
+    },
+    {
+      "name": "shoot",
+      "duration": 200,
+      "loop": false,
+      "tracks": [
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.1, "value": -35 }, { "time": 1, "value": 0 }] },
+        { "part": "weapon", "property": "x", "keyframes": [{ "time": 0, "value": 5 }, { "time": 0.1, "value": -10 }, { "time": 1, "value": 5 }] },
+        { "part": "torso", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.1, "value": -4 }, { "time": 1, "value": 0 }] }
+      ]
+    },
+    {
+      "name": "attack",
+      "duration": 500,
+      "loop": false,
+      "tracks": [
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.4, "value": -70 }, { "time": 0.6, "value": 25 }, { "time": 1, "value": 0 }] },
+        { "part": "torso", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.4, "value": -10 }, { "time": 0.6, "value": 5 }, { "time": 1, "value": 0 }] }
+      ]
+    },
+    {
+      "name": "death",
+      "duration": 600,
+      "loop": false,
+      "tracks": [
+        { "part": "torso", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.6, "value": 60 }, { "time": 1, "value": 90 }] },
+        { "part": "head", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.5, "value": 30 }, { "time": 1, "value": 45 }] },
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 1, "value": -40 }] },
+        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 1, "value": 30 }] }
+      ]
+    }
+  ]
+}
