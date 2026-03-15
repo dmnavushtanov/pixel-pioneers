@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 
 /**
  * Projectile entity: flies toward a target position, deals damage on hit.
- * Now decoupled from weapon type — receives speed/size/color directly.
+ * Nearly invisible for firearms — feedback comes from muzzle flash/smoke/hit effects.
  */
 export class Projectile extends Phaser.GameObjects.Arc {
   public speed: number;
@@ -19,10 +19,12 @@ export class Projectile extends Phaser.GameObjects.Arc {
     targetY: number,
     projectileSpeed: number,
     damage: number,
-    size = 3,
+    size = 1,
     color = 0xffdd44,
+    alpha = 0.15,
   ) {
     super(scene, x, y, size, 0, 360, false, color);
+    this.setAlpha(alpha);
     this.speed = projectileSpeed;
     this.dmg = damage;
     this.targetX = targetX;

@@ -17,6 +17,10 @@ export const WEAPONS: Record<string, WeaponConfig> = {
     accuracy: 0.6,
     unlockLevel: 0,
     sprite: 'weapon',
+    visualGroup: 'muzzle_loading',
+    smokeLevel: 0.9,
+    recoilAmount: 0.8,
+    reloadStyle: 'barrel',
   },
   flintlock_musket: {
     id: 'flintlock_musket',
@@ -30,6 +34,10 @@ export const WEAPONS: Record<string, WeaponConfig> = {
     accuracy: 0.65,
     unlockLevel: 1,
     sprite: 'weapon',
+    visualGroup: 'muzzle_loading',
+    smokeLevel: 1.0,
+    recoilAmount: 0.9,
+    reloadStyle: 'barrel',
   },
   caplock_musket: {
     id: 'caplock_musket',
@@ -43,6 +51,10 @@ export const WEAPONS: Record<string, WeaponConfig> = {
     accuracy: 0.7,
     unlockLevel: 3,
     sprite: 'weapon',
+    visualGroup: 'muzzle_loading',
+    smokeLevel: 0.8,
+    recoilAmount: 0.7,
+    reloadStyle: 'barrel',
   },
   krynka: {
     id: 'krynka',
@@ -56,6 +68,10 @@ export const WEAPONS: Record<string, WeaponConfig> = {
     accuracy: 0.8,
     unlockLevel: 5,
     sprite: 'weapon',
+    visualGroup: 'breech_single_shot',
+    smokeLevel: 0.5,
+    recoilAmount: 0.6,
+    reloadStyle: 'breech',
   },
   winchester_1866: {
     id: 'winchester_1866',
@@ -69,6 +85,10 @@ export const WEAPONS: Record<string, WeaponConfig> = {
     accuracy: 0.75,
     unlockLevel: 8,
     sprite: 'weapon',
+    visualGroup: 'repeater',
+    smokeLevel: 0.3,
+    recoilAmount: 0.4,
+    reloadStyle: 'lever',
   },
   peabody_martini: {
     id: 'peabody_martini',
@@ -82,6 +102,10 @@ export const WEAPONS: Record<string, WeaponConfig> = {
     accuracy: 0.85,
     unlockLevel: 12,
     sprite: 'weapon',
+    visualGroup: 'breech_single_shot',
+    smokeLevel: 0.4,
+    recoilAmount: 0.5,
+    reloadStyle: 'breech',
   },
 };
 

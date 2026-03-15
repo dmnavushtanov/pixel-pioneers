@@ -103,35 +103,127 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private createBackground(w: number, h: number) {
-    this.add.rectangle(w / 2, h / 2, w, h, 0x1e1e1a);
-    const graphics = this.add.graphics();
-    graphics.lineStyle(1, 0x2a2a24, 0.4);
-    for (let i = 0; i < 10; i++) {
-      const ly = (h / 10) * i;
-      graphics.lineBetween(0, ly, w, ly);
-    }
-    for (let i = 0; i < 15; i++) {
-      const px = Math.random() * w;
-      const py = Math.random() * h;
-      const scale = 0.5 + (py / h) * 0.5;
-      const debris = this.add.circle(px, py, 2 + Math.random() * 4, 0x111111, 0.2);
-      debris.setScale(scale);
-      debris.setDepth(py / 10);
-    }
-    const nml = this.add.rectangle(w * 0.6, h / 2, w * 0.7, h, 0x000000, 0.1);
-    nml.setDepth(0);
+    // Sky gradient — warm historical atmosphere
+    const skyGfx = this.add.graphics();
+    skyGfx.fillGradientStyle(0x8b9dc3, 0x8b9dc3, 0xc4a882, 0xc4a882, 1);
+    skyGfx.fillRect(0, 0, w, h * 0.45);
+    skyGfx.setDepth(0);
 
+    // Ground — earthy brown field
+    const groundGfx = this.add.graphics();
+    groundGfx.fillGradientStyle(0x6b5b3a, 0x6b5b3a, 0x5a4a2e, 0x5a4a2e, 1);
+    groundGfx.fillRect(0, h * 0.35, w, h * 0.65);
+    groundGfx.setDepth(0);
+
+    // Horizon line — subtle transition
+    const horizonGfx = this.add.graphics();
+    horizonGfx.fillGradientStyle(0x7a6a4a, 0x7a6a4a, 0x6b5b3a, 0x6b5b3a, 0.6);
+    horizonGfx.fillRect(0, h * 0.33, w, h * 0.14);
+    horizonGfx.setDepth(0);
+
+    // Distant hills / treeline silhouette
+    const hillsGfx = this.add.graphics();
+    hillsGfx.fillStyle(0x4a5a3a, 0.4);
+    hillsGfx.beginPath();
+    hillsGfx.moveTo(0, h * 0.4);
+    for (let x = 0; x <= w; x += 40) {
+      const hillY = h * 0.38 + Math.sin(x * 0.008) * 12 + Math.sin(x * 0.02) * 6;
+      hillsGfx.lineTo(x, hillY);
+    }
+    hillsGfx.lineTo(w, h * 0.45);
+    hillsGfx.lineTo(0, h * 0.45);
+    hillsGfx.closePath();
+    hillsGfx.fill();
+    hillsGfx.setDepth(0);
+
+    // Ground texture — subtle dust/dirt spots
+    const dustGfx = this.add.graphics();
+    dustGfx.setDepth(1);
+    for (let i = 0; i < 60; i++) {
+      const dx = Math.random() * w;
+      const dy = h * 0.4 + Math.random() * h * 0.55;
+      const radius = 1 + Math.random() * 3;
+      const alpha = 0.05 + Math.random() * 0.1;
+      const shade = Math.random() > 0.5 ? 0x5a4a2e : 0x7a6a4a;
+      dustGfx.fillStyle(shade, alpha);
+      dustGfx.fillCircle(dx, dy, radius);
+    }
+
+    // Lane readability — very subtle ground variations
+    for (const lane of this.layout.lanes) {
+      const ly = lane.groundY * h;
+      const laneGfx = this.add.graphics();
+      laneGfx.fillStyle(0x5a4a2e, 0.15);
+      laneGfx.fillRect(0, ly - 15, w, 30);
+      laneGfx.setDepth(1);
+    }
+
+    // Barricade-area ground scuffs
+    const scuffGfx = this.add.graphics();
+    scuffGfx.setDepth(1);
+    const bx = this.layout.barricade.lineX * w;
+    for (let i = 0; i < 12; i++) {
+      const sx = bx + (Math.random() - 0.5) * 60 - 20;
+      const sy = h * 0.3 + Math.random() * h * 0.5;
+      scuffGfx.fillStyle(0x4a3a1e, 0.15);
+      scuffGfx.fillRect(sx, sy, 8 + Math.random() * 15, 2 + Math.random() * 3);
+    }
+
+    // Simple defensive props near barricade
     if (this.layout.propAnchors) {
       for (const prop of this.layout.propAnchors) {
         const px = prop.position.x * w;
         const py = prop.position.y * h;
-        const propGfx = this.add.rectangle(px, py, 14, 14, 0x5d4037, 0.4);
-        propGfx.setStrokeStyle(1, 0x3e2723);
-        propGfx.setAngle(Math.random() * 30 - 15);
-        propGfx.setScale(prop.scale);
-        propGfx.setDepth(py / 10);
+        this.createProp(px, py, prop.scale, prop.id);
       }
     }
+
+    // Extra sandbags near barricade base
+    for (let i = 0; i < 4; i++) {
+      const sbx = bx - 30 - Math.random() * 20;
+      const sby = h * 0.28 + (i / 3) * h * 0.52;
+      this.createSandbag(sbx, sby);
+    }
+  }
+
+  private createProp(x: number, y: number, scale: number, id: string) {
+    if (id.includes('barrel')) {
+      // Wooden barrel
+      const barrel = this.add.graphics();
+      barrel.fillStyle(0x5d4037);
+      barrel.fillEllipse(x, y, 14 * scale, 18 * scale);
+      barrel.lineStyle(1, 0x3e2723);
+      barrel.strokeEllipse(x, y, 14 * scale, 18 * scale);
+      // Bands
+      barrel.lineStyle(1, 0x2a1a0a);
+      barrel.lineBetween(x - 6 * scale, y - 3, x + 6 * scale, y - 3);
+      barrel.lineBetween(x - 6 * scale, y + 3, x + 6 * scale, y + 3);
+      barrel.setDepth(y / 10 + 2);
+    } else if (id.includes('crate')) {
+      // Wooden crate
+      const crate = this.add.rectangle(x, y, 16 * scale, 14 * scale, 0x6d5037)
+        .setStrokeStyle(1, 0x3e2723).setAngle(Math.random() * 10 - 5);
+      crate.setDepth(y / 10 + 2);
+      // Cross planks
+      const plankGfx = this.add.graphics();
+      plankGfx.lineStyle(1, 0x3e2723, 0.4);
+      plankGfx.lineBetween(x - 6, y - 5, x + 6, y + 5);
+      plankGfx.lineBetween(x + 6, y - 5, x - 6, y + 5);
+      plankGfx.setDepth(y / 10 + 2);
+    } else {
+      // Generic debris
+      this.add.rectangle(x, y, 10 * scale, 10 * scale, 0x5d4037, 0.5)
+        .setAngle(Math.random() * 30).setDepth(y / 10 + 2);
+    }
+  }
+
+  private createSandbag(x: number, y: number) {
+    const gfx = this.add.graphics();
+    gfx.fillStyle(0x8b7d5b, 0.7);
+    gfx.fillEllipse(x, y, 18, 8);
+    gfx.lineStyle(1, 0x6b5d3b, 0.5);
+    gfx.strokeEllipse(x, y, 18, 8);
+    gfx.setDepth(y / 10 + 3);
   }
 
   update(_time: number, delta: number) {

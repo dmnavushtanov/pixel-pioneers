@@ -30,13 +30,13 @@ src/game/
 │   ├── Barricade.ts         # Destructible defense line
 │   ├── DefenderSlot.ts      # Station for player units
 │   ├── EnemyUnit.ts         # Enemy with UnitRig
-│   ├── PlayerUnit.ts        # Defender with UnitRig + weapon
-│   ├── Projectile.ts        # Generic projectile
+│   ├── PlayerUnit.ts        # Defender with UnitRig + weapon + reload
+│   ├── Projectile.ts        # Nearly-invisible projectile (hit detection only)
 │   └── UnitRig.ts           # Cutout character renderer
 ├── scenes/                  # Boot, Menu, Battle, UI
 ├── systems/
 │   ├── UnitLoader.ts        # Asset loader & procedural fallback
-│   ├── CombatSystem.ts      # Targeting, projectiles, melee
+│   ├── CombatSystem.ts      # Targeting, muzzle flash, smoke, hit effects
 │   ├── WaveSystem.ts        # Spawning logic
 │   ├── UpgradeSystem.ts     # Kill-based progression
 │   ├── LootSystem.ts        # Gold drops & collection
@@ -45,7 +45,7 @@ src/game/
 └── types/
     ├── RigDefinition.ts     # Part hierarchy, sockets, displaySize
     ├── AnimationDefinition.ts # Keyframe animation tracks
-    ├── WeaponDefinition.ts  # WeaponConfig + ProjectileConfig
+    ├── WeaponDefinition.ts  # WeaponConfig + visual groups + reload styles
     ├── UnitDefinition.ts    # Unit stats, upgrades
     ├── EnemyDefinition.ts   # Enemy stats, loot
     ├── BattlefieldDefinition.ts # Layout types
@@ -56,7 +56,7 @@ public/assets/
 │   ├── bulgarian_rifleman/
 │   │   ├── parts/           # PNG body parts
 │   │   ├── rig.json         # Skeleton hierarchy + displaySize
-│   │   ├── animations.json  # Animation clips
+│   │   ├── animations.json  # Animation clips (idle, move, shoot, reload_muzzle, reload_simple, death)
 │   │   └── manifest.json    # Asset list
 │   └── ottoman_rifleman/
 │       └── ... (same structure)
@@ -71,66 +71,77 @@ public/assets/
 
 ### How It Works
 
-Weapons use a **simple flat config** (`WeaponConfig`). No multipliers, no deep inheritance — just direct values.
+Weapons use a **simple flat config** (`WeaponConfig`). Each weapon belongs to a **visual behavior group** that determines shooting feel, smoke, recoil, and reload style.
 
 ### `WeaponConfig` Interface
 
 ```typescript
 interface WeaponConfig {
-  id: string;           // Internal key
-  name: string;         // Display name
-  type: WeaponType;     // 'pistol' | 'musket' | 'rifle' | 'repeater'
-  damage: number;       // Damage per shot
-  range: number;        // Attack range (pixels)
-  fireRate: number;     // Seconds between shots
-  reloadTime: number;   // Reload duration (future use)
-  projectileSpeed: number; // Pixels/sec
-  accuracy: number;     // 0-1 (1 = perfect, affects spread)
-  unlockLevel: number;  // Available at this wave/level
-  sprite: string;       // Visual key reference
+  id: string;
+  name: string;
+  type: WeaponType;          // 'pistol' | 'musket' | 'rifle' | 'repeater'
+  damage: number;
+  range: number;
+  fireRate: number;           // Seconds between shots
+  reloadTime: number;         // Reload duration in seconds
+  projectileSpeed: number;
+  accuracy: number;           // 0-1 (affects spread)
+  unlockLevel: number;
+  sprite: string;
+  visualGroup: WeaponVisualGroup;  // 'muzzle_loading' | 'breech_single_shot' | 'repeater'
+  smokeLevel: number;         // 0-1 smoke intensity
+  recoilAmount: number;       // 0-1 recoil strength
+  reloadStyle: ReloadStyle;   // 'barrel' | 'breech' | 'lever' | 'none'
 }
 ```
 
+### Weapon Visual Groups
+
+| Group | Weapons | Behavior |
+|-------|---------|----------|
+| `muzzle_loading` | Flintlock Pistol, Flintlock Musket, Caplock Musket | Heavy smoke, strong muzzle flash, barrel reload animation, long reload pause |
+| `breech_single_shot` | Krynka, Peabody-Martini | Medium smoke, strong single-shot feel, breech reload, shorter reload |
+| `repeater` | Winchester 1866 | Light smoke, fast fire rhythm, lever reload, quick reset |
+
 ### Available Weapons (ordered by progression)
 
-| Weapon | Type | Damage | Range | Fire Rate | Accuracy | Unlock |
-|--------|------|--------|-------|-----------|----------|--------|
-| Flintlock Pistol | pistol | 8 | 180 | 1.2s | 0.60 | 0 |
-| Flintlock Musket | musket | 14 | 260 | 1.8s | 0.65 | 1 |
-| Caplock Musket | musket | 16 | 280 | 1.5s | 0.70 | 3 |
-| Krynka Rifle | rifle | 22 | 340 | 1.4s | 0.80 | 5 |
-| Winchester 1866 | repeater | 12 | 300 | 0.6s | 0.75 | 8 |
-| Peabody-Martini | rifle | 30 | 380 | 1.6s | 0.85 | 12 |
+| Weapon | Type | Damage | Range | Fire Rate | Accuracy | Smoke | Recoil | Reload Style | Unlock |
+|--------|------|--------|-------|-----------|----------|-------|--------|-------------|--------|
+| Flintlock Pistol | pistol | 8 | 180 | 1.2s | 0.60 | 0.9 | 0.8 | barrel | 0 |
+| Flintlock Musket | musket | 14 | 260 | 1.8s | 0.65 | 1.0 | 0.9 | barrel | 1 |
+| Caplock Musket | musket | 16 | 280 | 1.5s | 0.70 | 0.8 | 0.7 | barrel | 3 |
+| Krynka Rifle | rifle | 22 | 340 | 1.4s | 0.80 | 0.5 | 0.6 | breech | 5 |
+| Winchester 1866 | repeater | 12 | 300 | 0.6s | 0.75 | 0.3 | 0.4 | lever | 8 |
+| Peabody-Martini | rifle | 30 | 380 | 1.6s | 0.85 | 0.4 | 0.5 | breech | 12 |
 
-### Weapon Progression
+### Shooting Visual Feedback
 
-- `getBestWeaponForLevel(level)` — returns the best weapon available at a given wave
-- `getWeaponProgression()` — returns all weapons sorted by unlock level
-- Units reference weapons by `weaponId` in their definition
+Bullets are **nearly invisible** — combat readability comes from:
+1. **Muzzle flash** — bright flash at weapon tip (bigger/warmer for black powder)
+2. **Gun smoke** — smoke particles (more for muzzle-loading, less for modern rifles)
+3. **Hit spark** — dust/dirt effect at target location (delayed by distance)
+4. **Recoil** — weapon kickback animation on torso + arm
+5. **Hit effect** — red impact flash on enemy when hit
 
-### How Combat Uses Weapons
+### Reload System
 
-1. `PlayerUnit.weapon` holds the equipped `WeaponConfig`
-2. `getEffectiveDamage()` = weapon.damage + unit base damage
-3. `getEffectiveAttackSpeed()` = weapon.fireRate (seconds between shots)
-4. `getEffectiveRange()` = weapon.range
-5. `CombatSystem` applies accuracy as projectile spread
-6. `Projectile` receives speed/damage directly — decoupled from weapon type
+**Muzzle-loading weapons** (`reloadStyle: 'barrel'`):
+1. Unit fires → shoot animation plays
+2. Reload state activates → `isReloading = true`
+3. `reload_muzzle` clip plays: weapon tilts upward, left arm moves to barrel area
+4. After `reloadTime` seconds, unit returns to idle
+5. Can fire again
+
+**Breech/lever weapons** (`reloadStyle: 'breech' | 'lever'`):
+- No explicit reload state (handled by `fireRate` timing)
+- `reload_simple` clip available for future use
 
 ### How to Add a New Weapon
 
 1. Add entry to `WEAPONS` in `src/game/data/weapons.ts`
-2. Set `unlockLevel` for progression placement
-3. Reference by `weaponId` in unit definitions
-4. Done — no other files need changes
-
-### Future Extensions (not built yet)
-
-- Weapon switching during combat
-- Visual weapon sprites per weapon type
-- Reload animation timing
-- Weapon-specific sound effects
-- Special weapon abilities (bayonet charge, etc.)
+2. Set `visualGroup`, `smokeLevel`, `recoilAmount`, `reloadStyle`
+3. Set `unlockLevel` for progression placement
+4. Done — visual behavior is automatic based on group
 
 ---
 
@@ -144,7 +155,7 @@ The game uses a **cutout-rig system** (`UnitRig.ts`) that renders characters fro
 
 Each rig part specifies a `displaySize` (width × height in pixels). This is critical because:
 - Source PNGs can be any resolution (e.g., 512×512 from AI generation)
-- `displaySize` scales them to gameplay-appropriate sizes (~80px total unit height)
+- `displaySize` scales them to gameplay-appropriate sizes (~60px total unit height)
 - Positions/offsets in `rig.json` are in **display-space pixels**, not source pixels
 
 ### Unit Folder Structure
@@ -168,76 +179,38 @@ public/assets/units/{unit_id}/
 
 | Part | Display Size | Pivot Point | Purpose |
 |------|-------------|-------------|---------|
-| `head` | 18×20 | Lower-center (neck) | Head with headwear |
-| `torso` | 22×30 | Lower-center (waist) | Body/jacket |
-| `left_arm` | 10×24 | Upper-right (shoulder) | Support arm |
-| `right_arm` | 10×24 | Upper-left (shoulder) | Weapon arm |
-| `left_leg` | 10×24 | Top-center (hip) | Left leg |
-| `right_leg` | 10×24 | Top-center (hip) | Right leg |
-| `weapon` | 34×8 | Left-center (grip) | Rifle/melee |
+| `head` | 16×18 | Lower-center (neck) | Head with headwear |
+| `torso` | 20×26 | Lower-center (waist) | Body/jacket |
+| `left_arm` | 8×20 | Upper (shoulder) | Support arm |
+| `right_arm` | 8×20 | Upper (shoulder) | Weapon arm |
+| `left_leg` | 8×22 | Top (hip) | Left leg |
+| `right_leg` | 8×22 | Top (hip) | Right leg |
+| `weapon` | 30×6 | Left-center (grip) | Rifle/melee |
 
 ### Rig Hierarchy
 
 ```
 root
- ├─ torso (pivot: waist)
- │   ├─ head (pivot: neck)
- │   ├─ left_arm (pivot: shoulder)
- │   ├─ right_arm (pivot: shoulder)
- │   │   └─ weapon (pivot: grip)
- ├─ left_leg (pivot: hip)
- └─ right_leg (pivot: hip)
+ ├─ torso (pivot: waist, position: 0,0)
+ │   ├─ head (pivot: neck, position: 0,-22)
+ │   ├─ left_arm (pivot: shoulder, position: -8,-18, rotation: 15°)
+ │   ├─ right_arm (pivot: shoulder, position: 8,-18, rotation: -20°)
+ │   │   └─ weapon (pivot: grip, position: 2,12, rotation: 10°)
+ ├─ left_leg (pivot: hip, position: -4,14)
+ └─ right_leg (pivot: hip, position: 4,14)
 ```
 
-### `rig.json` Format
+### Animation Clips
 
-```json
-{
-  "id": "bulgarian_rifleman",
-  "parts": [
-    {
-      "name": "torso",
-      "image": "torso.png",
-      "pivot": { "x": 0.5, "y": 0.8 },
-      "position": { "x": 0, "y": 0 },
-      "rotation": 0,
-      "scale": { "x": 1, "y": 1 },
-      "zIndex": 10,
-      "displaySize": { "width": 22, "height": 30 }
-    },
-    {
-      "name": "weapon",
-      "parent": "right_arm",
-      "image": "weapon.png",
-      "pivot": { "x": 0.15, "y": 0.5 },
-      "position": { "x": 4, "y": 14 },
-      "rotation": 5,
-      "scale": { "x": 1, "y": 1 },
-      "zIndex": 25,
-      "displaySize": { "width": 34, "height": 8 }
-    }
-  ],
-  "sockets": {
-    "muzzle": { "part": "weapon", "offset": { "x": 30, "y": 0 } }
-  }
-}
-```
-
-### Sockets
-
-Sockets are named attachment points on parts. The `muzzle` socket on the weapon part determines where projectiles spawn. Offsets are in **display-space pixels** relative to the part's position.
-
-### Animations (`animations.json`)
-
-| Clip | Duration | Loop | Tracks |
-|------|----------|------|--------|
-| `idle` | 1200ms | Yes | Subtle torso breathing |
-| `move` | 500ms | Yes | Alternating legs + torso bob |
-| `shoot` | 250ms | No | Arm recoil + torso kickback |
+| Clip | Duration | Loop | Purpose |
+|------|----------|------|---------|
+| `idle` | 1500ms | Yes | Subtle breathing, slight arm sway |
+| `move` | 600ms | Yes | Alternating legs + torso bob |
+| `shoot` | 300ms | No | Arm recoil + weapon kickback + torso lean |
+| `reload_muzzle` | 2500ms | No | Weapon tilts up, left arm moves to barrel (muzzle-loaders only) |
+| `reload_simple` | 1200ms | No | Brief weapon tilt + arm reset (breech/lever weapons) |
+| `death` | 600ms | No | Torso collapse + limb spread |
 | `attack` | 400ms | No | Melee arm swing |
-| `death` | 600ms | No | Torso rotation + fall |
-
-Tracks animate individual part properties (`rotation`, `x`, `y`, `scaleX`, `scaleY`, `alpha`) using normalized keyframes (time 0-1).
 
 ### Procedural Fallback
 
@@ -258,15 +231,18 @@ If rig/animation JSON files are missing, `UnitLoader` generates colored placehol
 
 ### How It Works
 
-Battlefields are **config-driven**. All gameplay positions come from `layout.json` — the background image is visual only.
+Battlefields are **config-driven**. All gameplay positions come from `layout.json` — the background is rendered procedurally.
 
-### Battlefield Folder Structure
+### Battlefield Visual Design
 
-```
-public/battlefields/{battlefield_id}/
-  background.png      # Visual backdrop (any resolution)
-  layout.json         # All gameplay positions (normalized 0-1)
-```
+The battlefield renders:
+- **Sky gradient** — warm blue-to-tan transition at top
+- **Ground** — earthy brown field with gradient
+- **Horizon** — distant hills/treeline silhouette
+- **Dust texture** — subtle ground spots for depth
+- **Lane hints** — very subtle darker ground strips
+- **Barricade area** — scuff marks and debris
+- **Props** — sandbags, barrels, crates near the defense line
 
 ### Layout Config (Normalized Coordinates)
 
@@ -335,9 +311,10 @@ npm run dev
 ## 🔮 Future Upgrades
 
 - Weapon switching / shop UI
+- Weapon-specific sound effects
 - Separate hat/beard parts for distinct silhouettes
 - Upper/lower arm/leg splits for smoother animation
 - Rider + horse split rig
-- Multiple battlefield backgrounds
-- Sound effects
+- Background image support for battlefields
 - Battlefield selection screen
+- Special weapon abilities (bayonet charge, etc.)
