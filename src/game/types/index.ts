@@ -1,5 +1,5 @@
 export type { UnitDefinition, UnitStats, UpgradeTier } from './UnitDefinition';
-export type { WeaponDefinition, ProjectileConfig } from './WeaponDefinition';
+export type { WeaponConfig, WeaponType, ProjectileConfig } from './WeaponDefinition';
 export type { EnemyDefinition, GoldDrop } from './EnemyDefinition';
 export type { RigDefinition, RigPartDefinition, Vec2 as RigVec2 } from './RigDefinition';
 export type {

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import type { UnitDefinition, UnitStats, WeaponDefinition } from '../types';
+import type { UnitDefinition, UnitStats } from '../types';
+import type { WeaponConfig } from '../types/WeaponDefinition';
 import { WEAPONS } from '../data/weapons';
 import { UnitRig } from './UnitRig';
 import { UnitLoader } from '../systems/UnitLoader';
@@ -13,7 +14,7 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
   public kills = 0;
   public currentTier = 0;
   public effectiveStats: UnitStats;
-  public weapon: WeaponDefinition;
+  public weapon: WeaponConfig;
   public attackCooldown = 0;
 
   private rig?: UnitRig;
@@ -25,14 +26,14 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
     this.def = def;
     this.currentHealth = def.baseStats.maxHealth;
     this.effectiveStats = { ...def.baseStats };
-    this.weapon = WEAPONS[def.weaponId];
+    this.weapon = WEAPONS[def.weaponId] ?? Object.values(WEAPONS)[0];
 
     this.glowGfx = new Phaser.GameObjects.Arc(scene, 0, 0, 30, 0, 360, false, def.color, 0.15);
     this.tierLabel = new Phaser.GameObjects.Text(scene, 0, -55, def.name, {
       fontSize: '10px',
       color: '#ffffff',
       fontFamily: 'monospace',
-      backgroundColor: '#00000088'
+      backgroundColor: '#00000088',
     }).setOrigin(0.5);
 
     this.add([this.glowGfx, this.tierLabel]);
@@ -45,9 +46,8 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
     const loader = new UnitLoader(this.scene);
     const rigId = this.def.rigId ?? 'bulgarian_rifleman';
     const data = loader.loadUnit(rigId);
-    
+
     this.rig = new UnitRig(this.scene, 0, 0, data.rig, data.anims);
-    this.rig.setScale(0.8);
     this.addAt(this.rig, 1);
     this.rig.play('idle');
   }
@@ -62,9 +62,7 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
   }
 
   update(time: number, delta: number) {
-    if (this.rig) {
-      this.rig.update(delta);
-    }
+    if (this.rig) this.rig.update(delta);
   }
 
   addKill() {
@@ -109,18 +107,14 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
   takeDamage(amount: number): boolean {
     this.currentHealth = Math.max(0, this.currentHealth - amount);
     if (this.rig) {
-      this.scene.tweens.add({
-        targets: this.rig,
-        alpha: 0.5,
-        duration: 50,
-        yoyo: true
-      });
+      this.scene.tweens.add({ targets: this.rig, alpha: 0.5, duration: 50, yoyo: true });
     }
     return this.currentHealth <= 0;
   }
 
+  /** Direct weapon damage */
   getEffectiveDamage(): number {
-    return this.effectiveStats.damage * this.weapon.damageMultiplier;
+    return this.weapon.damage + this.effectiveStats.damage;
   }
 
   getEffectiveRange(): number {
@@ -128,10 +122,10 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
   }
 
   getEffectiveAttackSpeed(): number {
-    return this.effectiveStats.attackSpeed * (this.weapon.attackSpeed / this.def.baseStats.attackSpeed);
+    return 1 / this.weapon.fireRate; // fireRate = seconds between shots
   }
-  
-  getMuzzlePosition(): { x: number, y: number } {
+
+  getMuzzlePosition(): { x: number; y: number } {
     if (this.rig) {
       const socket = this.rig.getSocketWorldPosition('muzzle');
       if (socket) return socket;

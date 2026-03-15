@@ -1,30 +1,35 @@
 /**
- * Defines a weapon's combat properties and visual representation.
- * Weapons affect damage, range, attack speed, and projectile behavior.
+ * Simple weapon config for early gameplay.
+ * Direct values, no multipliers. Easy to extend later.
  */
-export interface WeaponDefinition {
+export type WeaponType = 'pistol' | 'musket' | 'rifle' | 'repeater';
+
+export interface WeaponConfig {
   id: string;
   name: string;
-  /** Damage multiplier applied to unit base damage */
-  damageMultiplier: number;
-  /** Override unit range (pixels) */
+  type: WeaponType;
+  /** Direct damage per shot */
+  damage: number;
+  /** Attack range in pixels */
   range: number;
-  /** Override unit attack speed (attacks/sec) */
-  attackSpeed: number;
-  /** Projectile config for ranged weapons */
-  projectile: ProjectileConfig;
-  /** Placeholder visual */
-  color: number;
-  /** Length of weapon placeholder graphic */
-  length: number;
-  /** Future: reference to weapon sprite in rig */
-  rigPartId?: string;
+  /** Seconds between shots */
+  fireRate: number;
+  /** Reload duration in seconds (not used yet, future) */
+  reloadTime: number;
+  /** Projectile speed in pixels/sec */
+  projectileSpeed: number;
+  /** Accuracy 0-1 (1 = perfect, affects spread) */
+  accuracy: number;
+  /** Progression: available at this level/wave */
+  unlockLevel: number;
+  /** Visual reference key */
+  sprite: string;
 }
 
+/** Projectile visual config (used by CombatSystem) */
 export interface ProjectileConfig {
-  speed: number; // pixels per second
-  size: number; // radius in pixels
+  speed: number;
+  size: number;
   color: number;
-  /** Trail particles count (0 = no trail) */
   trailCount: number;
 }

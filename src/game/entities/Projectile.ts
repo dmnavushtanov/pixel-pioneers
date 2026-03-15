@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
-import type { WeaponDefinition } from '../types';
-import { WEAPONS } from '../data/weapons';
 
 /**
  * Projectile entity: flies toward a target position, deals damage on hit.
+ * Now decoupled from weapon type — receives speed/size/color directly.
  */
 export class Projectile extends Phaser.GameObjects.Arc {
   public speed: number;
@@ -18,11 +17,13 @@ export class Projectile extends Phaser.GameObjects.Arc {
     y: number,
     targetX: number,
     targetY: number,
-    weaponDef: WeaponDefinition,
-    damage: number
+    projectileSpeed: number,
+    damage: number,
+    size = 3,
+    color = 0xffdd44,
   ) {
-    super(scene, x, y, weaponDef.projectile.size, 0, 360, false, weaponDef.projectile.color);
-    this.speed = weaponDef.projectile.speed;
+    super(scene, x, y, size, 0, 360, false, color);
+    this.speed = projectileSpeed;
     this.dmg = damage;
     this.targetX = targetX;
     this.targetY = targetY;
@@ -48,5 +49,3 @@ export class Projectile extends Phaser.GameObjects.Arc {
     this.y += (dy / dist) * step;
   }
 }
-
-export default Projectile;
