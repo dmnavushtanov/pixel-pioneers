@@ -1,4 +1,4 @@
-import type { UnitDefinition } from '../types';
+import type { UnitDefinition, UnitStats, UpgradeTier } from '../types';
 
 export const PLAYER_UNIT: UnitDefinition = {
   id: 'bulgarian_rifleman',
@@ -6,13 +6,13 @@ export const PLAYER_UNIT: UnitDefinition = {
   rigId: 'bulgarian_rifleman',
   baseStats: {
     maxHealth: 100,
-    damage: 10,
+    damage: 5,
     attackSpeed: 1,
     range: 280,
     moveSpeed: 0,
   },
   color: 0x6b4c2a,
-  weaponId: 'musket',
+  weaponId: 'flintlock_musket',
   upgradeTiers: [
     {
       killThreshold: 5,
