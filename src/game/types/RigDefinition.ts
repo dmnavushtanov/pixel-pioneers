@@ -13,6 +13,8 @@ export interface RigPartDefinition {
   scale: Vec2; // Base scale
   zIndex: number; // distinct from scene depth, for local sorting
   layer?: 'back' | 'body' | 'front'; // Gross sorting group
+  /** Target display size in pixels — images are scaled to fit */
+  displaySize?: { width: number; height: number };
 }
 
 export interface RigDefinition {
