@@ -7,6 +7,7 @@ import { UnitLoader } from '../systems/UnitLoader';
 
 /**
  * Player unit: stationary auto-attacker with cutout rig animation.
+ * Supports reload state for muzzle-loading weapons.
  */
 export class PlayerUnit extends Phaser.GameObjects.Container {
   public def: UnitDefinition;
@@ -16,10 +17,12 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
   public effectiveStats: UnitStats;
   public weapon: WeaponConfig;
   public attackCooldown = 0;
+  public isReloading = false;
 
   private rig?: UnitRig;
   private glowGfx: Phaser.GameObjects.Arc;
   private tierLabel: Phaser.GameObjects.Text;
+  private reloadTimer = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, def: UnitDefinition) {
     super(scene, x, y);
@@ -55,14 +58,39 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
   playShootAnimation() {
     if (this.rig) {
       this.rig.play('shoot');
-      this.scene.time.delayedCall(250, () => {
-        if (this.rig) this.rig.play('idle');
+      // Return to idle after shoot animation
+      const shootDuration = this.weapon.visualGroup === 'muzzle_loading' ? 350 : 200;
+      this.scene.time.delayedCall(shootDuration, () => {
+        if (this.rig && !this.isReloading) this.rig.play('idle');
       });
     }
   }
 
+  /** Start reload sequence — used by CombatSystem after firing muzzle-loaders */
+  startReload(duration: number) {
+    this.isReloading = true;
+    this.reloadTimer = duration * 1000; // convert to ms
+
+    // Play reload animation after a short delay (let shoot finish)
+    this.scene.time.delayedCall(350, () => {
+      if (this.rig && this.isReloading) {
+        const clipName = this.weapon.reloadStyle === 'barrel' ? 'reload_muzzle' : 'reload_simple';
+        this.rig.play(clipName);
+      }
+    });
+  }
+
   update(time: number, delta: number) {
     if (this.rig) this.rig.update(delta);
+
+    // Handle reload timer
+    if (this.isReloading) {
+      this.reloadTimer -= delta;
+      if (this.reloadTimer <= 0) {
+        this.isReloading = false;
+        if (this.rig) this.rig.play('idle');
+      }
+    }
   }
 
   addKill() {
@@ -122,7 +150,7 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
   }
 
   getEffectiveAttackSpeed(): number {
-    return 1 / this.weapon.fireRate; // fireRate = seconds between shots
+    return 1 / this.weapon.fireRate;
   }
 
   getMuzzlePosition(): { x: number; y: number } {
