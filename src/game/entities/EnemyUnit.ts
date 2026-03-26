@@ -20,8 +20,8 @@ export class EnemyUnit extends Phaser.GameObjects.Container {
     this.def = def;
     this.currentHealth = def.health;
 
-    this.hpBar = new Phaser.GameObjects.Rectangle(scene, 0, -40, 30, 4, 0x44cc44);
-    const hpBg = new Phaser.GameObjects.Rectangle(scene, 0, -40, 30, 4, 0x330000);
+    this.hpBar = new Phaser.GameObjects.Rectangle(scene, 0, -52, 34, 4, 0x44cc44);
+    const hpBg = new Phaser.GameObjects.Rectangle(scene, 0, -52, 34, 4, 0x330000);
 
     this.add([hpBg, this.hpBar]);
     scene.add.existing(this);
@@ -35,7 +35,7 @@ export class EnemyUnit extends Phaser.GameObjects.Container {
     const data = loader.loadUnit(rigId);
     
     this.rig = new UnitRig(this.scene, 0, 0, data.rig, data.anims);
-    this.rig.setScale(-0.8, 0.8); // Face left
+    this.rig.setScale(-1, 1); // Face left at full gameplay scale
     this.addAt(this.rig, 0);
     this.rig.play('move');
   }

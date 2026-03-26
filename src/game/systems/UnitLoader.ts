@@ -66,16 +66,16 @@ export class UnitLoader {
     return {
       id: unitId,
       parts: [
-        { name: 'left_leg',  image: 'left_leg.png',  pivot: { x: 0.5, y: 0.15 }, position: { x: -4, y: 14 },  rotation: 0, scale: { x: 1, y: 1 }, zIndex: 5,  displaySize: { width: 8, height: 22 } },
-        { name: 'right_leg', image: 'right_leg.png', pivot: { x: 0.5, y: 0.15 }, position: { x: 4, y: 14 },   rotation: 0, scale: { x: 1, y: 1 }, zIndex: 6,  displaySize: { width: 8, height: 22 } },
-        { name: 'torso',     image: 'torso.png',     pivot: { x: 0.5, y: 0.75 }, position: { x: 0, y: 0 },    rotation: 0, scale: { x: 1, y: 1 }, zIndex: 10, displaySize: { width: 20, height: 26 } },
-        { name: 'head',      parent: 'torso', image: 'head.png', pivot: { x: 0.5, y: 0.9 }, position: { x: 0, y: -22 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 20, displaySize: { width: 16, height: 18 } },
-        { name: 'left_arm',  parent: 'torso', image: 'left_arm.png',  pivot: { x: 0.6, y: 0.12 }, position: { x: -8, y: -18 }, rotation: 15,  scale: { x: 1, y: 1 }, zIndex: 8,  displaySize: { width: 8, height: 20 } },
-        { name: 'right_arm', parent: 'torso', image: 'right_arm.png', pivot: { x: 0.4, y: 0.12 }, position: { x: 8, y: -18 },  rotation: -20, scale: { x: 1, y: 1 }, zIndex: 18, displaySize: { width: 8, height: 20 } },
-        { name: 'weapon',    parent: 'right_arm', image: 'weapon.png', pivot: { x: 0.2, y: 0.5 }, position: { x: 2, y: 12 }, rotation: 10, scale: { x: 1, y: 1 }, zIndex: 25, displaySize: { width: 30, height: 6 } },
+        { name: 'left_leg',  image: 'left_leg.png',  pivot: { x: 0.5, y: 0.09 }, position: { x: -6, y: 16 }, rotation: 2, scale: { x: 1, y: 1 }, zIndex: 4,  displaySize: { width: 15, height: 28 } },
+        { name: 'right_leg', image: 'right_leg.png', pivot: { x: 0.5, y: 0.09 }, position: { x: 6, y: 15 },  rotation: -2, scale: { x: 1, y: 1 }, zIndex: 5,  displaySize: { width: 15, height: 28 } },
+        { name: 'torso',     image: 'torso.png',     pivot: { x: 0.5, y: 0.84 }, position: { x: 0, y: 0 },   rotation: 0, scale: { x: 1, y: 1 }, zIndex: 10, displaySize: { width: 29, height: 36 } },
+        { name: 'head',      parent: 'torso', image: 'head.png', pivot: { x: 0.45, y: 0.9 }, position: { x: 2, y: -30 }, rotation: 0, scale: { x: 1, y: 1 }, zIndex: 16, displaySize: { width: 22, height: 22 } },
+        { name: 'left_arm',  parent: 'torso', image: 'left_arm.png',  pivot: { x: 0.2, y: 0.16 }, position: { x: 2, y: -22 }, rotation: 28,  scale: { x: 1, y: 1 }, zIndex: 8,  displaySize: { width: 18, height: 22 } },
+        { name: 'right_arm', parent: 'torso', image: 'right_arm.png', pivot: { x: 0.2, y: 0.16 }, position: { x: 10, y: -21 }, rotation: -10, scale: { x: 1, y: 1 }, zIndex: 18, displaySize: { width: 18, height: 22 } },
+        { name: 'weapon',    parent: 'right_arm', image: 'weapon.png', pivot: { x: 0.24, y: 0.53 }, position: { x: 15, y: 9 }, rotation: 4, scale: { x: 1, y: 1 }, zIndex: 17, displaySize: { width: 46, height: 11 } },
       ],
       sockets: {
-        muzzle: { part: 'weapon', offset: { x: 26, y: 0 } },
+        muzzle: { part: 'weapon', offset: { x: 34, y: 0 } },
       },
     };
   }
@@ -87,49 +87,63 @@ export class UnitLoader {
           name: 'idle', duration: 1500, loop: true,
           tracks: [
             { part: 'torso', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 0.5, value: -1 }, { time: 1, value: 0 }] },
-            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -20 }, { time: 0.5, value: -22 }, { time: 1, value: -20 }] },
+            { part: 'head', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 0.5, value: 0.8 }, { time: 1, value: 0 }] },
+            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -10 }, { time: 0.5, value: -11 }, { time: 1, value: -10 }] },
+            { part: 'left_arm', property: 'rotation', keyframes: [{ time: 0, value: 28 }, { time: 0.5, value: 29 }, { time: 1, value: 28 }] },
           ],
         },
         {
           name: 'move', duration: 600, loop: true,
           tracks: [
-            { part: 'right_leg', property: 'rotation', keyframes: [{ time: 0, value: 12 }, { time: 0.5, value: -12 }, { time: 1, value: 12 }] },
-            { part: 'left_leg', property: 'rotation', keyframes: [{ time: 0, value: -12 }, { time: 0.5, value: 12 }, { time: 1, value: -12 }] },
+            { part: 'right_leg', property: 'rotation', keyframes: [{ time: 0, value: 8 }, { time: 0.5, value: -10 }, { time: 1, value: 8 }] },
+            { part: 'left_leg', property: 'rotation', keyframes: [{ time: 0, value: -10 }, { time: 0.5, value: 8 }, { time: 1, value: -10 }] },
             { part: 'torso', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 0.25, value: -1.5 }, { time: 0.5, value: 0 }, { time: 0.75, value: -1.5 }, { time: 1, value: 0 }] },
+            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -8 }, { time: 0.5, value: -12 }, { time: 1, value: -8 }] },
+            { part: 'left_arm', property: 'rotation', keyframes: [{ time: 0, value: 30 }, { time: 0.5, value: 24 }, { time: 1, value: 30 }] },
+            { part: 'weapon', property: 'rotation', keyframes: [{ time: 0, value: 5 }, { time: 0.5, value: 3 }, { time: 1, value: 5 }] },
           ],
         },
         {
           name: 'shoot', duration: 300, loop: false,
           tracks: [
-            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -20 }, { time: 0.12, value: -35 }, { time: 1, value: -20 }] },
+            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -10 }, { time: 0.12, value: -20 }, { time: 0.5, value: -12 }, { time: 1, value: -10 }] },
+            { part: 'left_arm', property: 'rotation', keyframes: [{ time: 0, value: 28 }, { time: 0.12, value: 23 }, { time: 0.5, value: 26 }, { time: 1, value: 28 }] },
+            { part: 'weapon', property: 'x', keyframes: [{ time: 0, value: 15 }, { time: 0.12, value: 11 }, { time: 1, value: 15 }] },
+            { part: 'weapon', property: 'rotation', keyframes: [{ time: 0, value: 4 }, { time: 0.12, value: 2 }, { time: 0.5, value: 3 }, { time: 1, value: 4 }] },
+            { part: 'torso', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 0.12, value: -3 }, { time: 0.5, value: -1 }, { time: 1, value: 0 }] },
             { part: 'torso', property: 'x', keyframes: [{ time: 0, value: 0 }, { time: 0.12, value: -2 }, { time: 1, value: 0 }] },
           ],
         },
         {
           name: 'reload_muzzle', duration: 2500, loop: false,
           tracks: [
-            { part: 'weapon', property: 'rotation', keyframes: [{ time: 0, value: 10 }, { time: 0.15, value: 50 }, { time: 0.7, value: 50 }, { time: 1, value: 10 }] },
-            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -20 }, { time: 0.15, value: -40 }, { time: 0.7, value: -40 }, { time: 1, value: -20 }] },
-            { part: 'left_arm', property: 'rotation', keyframes: [{ time: 0, value: 15 }, { time: 0.15, value: -10 }, { time: 0.55, value: -10 }, { time: 1, value: 15 }] },
+            { part: 'weapon', property: 'rotation', keyframes: [{ time: 0, value: 4 }, { time: 0.15, value: 52 }, { time: 0.7, value: 56 }, { time: 1, value: 4 }] },
+            { part: 'weapon', property: 'y', keyframes: [{ time: 0, value: 9 }, { time: 0.15, value: 5 }, { time: 0.7, value: 5 }, { time: 1, value: 9 }] },
+            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -10 }, { time: 0.15, value: -34 }, { time: 0.7, value: -38 }, { time: 1, value: -10 }] },
+            { part: 'left_arm', property: 'rotation', keyframes: [{ time: 0, value: 28 }, { time: 0.15, value: -4 }, { time: 0.35, value: -10 }, { time: 0.55, value: -6 }, { time: 0.7, value: -2 }, { time: 1, value: 28 }] },
           ],
         },
         {
           name: 'reload_simple', duration: 1200, loop: false,
           tracks: [
-            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -20 }, { time: 0.2, value: -10 }, { time: 0.5, value: -15 }, { time: 1, value: -20 }] },
-            { part: 'weapon', property: 'rotation', keyframes: [{ time: 0, value: 10 }, { time: 0.2, value: 20 }, { time: 1, value: 10 }] },
+            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -10 }, { time: 0.2, value: -2 }, { time: 0.5, value: -6 }, { time: 1, value: -10 }] },
+            { part: 'left_arm', property: 'rotation', keyframes: [{ time: 0, value: 28 }, { time: 0.2, value: 24 }, { time: 0.5, value: 26 }, { time: 1, value: 28 }] },
+            { part: 'weapon', property: 'rotation', keyframes: [{ time: 0, value: 4 }, { time: 0.2, value: 15 }, { time: 1, value: 4 }] },
           ],
         },
         {
           name: 'attack', duration: 400, loop: false,
           tracks: [
-            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -20 }, { time: 0.3, value: -50 }, { time: 0.5, value: 10 }, { time: 1, value: -20 }] },
+            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -10 }, { time: 0.3, value: -36 }, { time: 0.5, value: 8 }, { time: 1, value: -10 }] },
           ],
         },
         {
           name: 'death', duration: 600, loop: false,
           tracks: [
-            { part: 'torso', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 1, value: -80 }] },
+            { part: 'torso', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 0.6, value: -44 }, { time: 1, value: -78 }] },
+            { part: 'head', property: 'rotation', keyframes: [{ time: 0, value: 0 }, { time: 0.5, value: -18 }, { time: 1, value: -30 }] },
+            { part: 'right_arm', property: 'rotation', keyframes: [{ time: 0, value: -10 }, { time: 1, value: 26 }] },
+            { part: 'left_arm', property: 'rotation', keyframes: [{ time: 0, value: 28 }, { time: 1, value: -14 }] },
             { part: 'torso', property: 'y', keyframes: [{ time: 0, value: 0 }, { time: 1, value: 10 }] },
           ],
         },
