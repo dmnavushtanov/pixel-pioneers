@@ -4,13 +4,13 @@ import type { AnimationSet, AnimationClip } from '../types/AnimationDefinition';
 
 /** Default display sizes for parts when not specified in rig.json */
 const DEFAULT_PART_SIZES: Record<string, { width: number; height: number }> = {
-  head:      { width: 18, height: 20 },
-  torso:     { width: 22, height: 30 },
-  left_arm:  { width: 10, height: 24 },
-  right_arm: { width: 10, height: 24 },
-  left_leg:  { width: 10, height: 24 },
-  right_leg: { width: 10, height: 24 },
-  weapon:    { width: 34, height: 8 },
+  head:      { width: 22, height: 22 },
+  torso:     { width: 29, height: 36 },
+  left_arm:  { width: 18, height: 22 },
+  right_arm: { width: 18, height: 22 },
+  left_leg:  { width: 15, height: 28 },
+  right_leg: { width: 15, height: 28 },
+  weapon:    { width: 46, height: 11 },
 };
 
 /**

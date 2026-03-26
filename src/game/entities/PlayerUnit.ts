@@ -31,8 +31,8 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
     this.effectiveStats = { ...def.baseStats };
     this.weapon = WEAPONS[def.weaponId] ?? Object.values(WEAPONS)[0];
 
-    this.glowGfx = new Phaser.GameObjects.Arc(scene, 0, 0, 30, 0, 360, false, def.color, 0.15);
-    this.tierLabel = new Phaser.GameObjects.Text(scene, 0, -55, def.name, {
+    this.glowGfx = new Phaser.GameObjects.Arc(scene, 0, 0, 34, 0, 360, false, def.color, 0.15);
+    this.tierLabel = new Phaser.GameObjects.Text(scene, 0, -68, def.name, {
       fontSize: '10px',
       color: '#ffffff',
       fontFamily: 'monospace',

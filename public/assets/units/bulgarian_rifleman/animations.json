@@ -6,8 +6,9 @@
       "loop": true,
       "tracks": [
         { "part": "torso", "property": "y", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.5, "value": -1 }, { "time": 1, "value": 0 }] },
-        { "part": "head", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.5, "value": 1.5 }, { "time": 1, "value": 0 }] },
-        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -20 }, { "time": 0.5, "value": -22 }, { "time": 1, "value": -20 }] }
+        { "part": "head", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.5, "value": 0.8 }, { "time": 1, "value": 0 }] },
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -10 }, { "time": 0.5, "value": -11 }, { "time": 1, "value": -10 }] },
+        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 28 }, { "time": 0.5, "value": 29 }, { "time": 1, "value": 28 }] }
       ]
     },
     {
@@ -15,11 +16,12 @@
       "duration": 600,
       "loop": true,
       "tracks": [
-        { "part": "right_leg", "property": "rotation", "keyframes": [{ "time": 0, "value": 12 }, { "time": 0.5, "value": -12 }, { "time": 1, "value": 12 }] },
-        { "part": "left_leg", "property": "rotation", "keyframes": [{ "time": 0, "value": -12 }, { "time": 0.5, "value": 12 }, { "time": 1, "value": -12 }] },
+        { "part": "right_leg", "property": "rotation", "keyframes": [{ "time": 0, "value": 8 }, { "time": 0.5, "value": -10 }, { "time": 1, "value": 8 }] },
+        { "part": "left_leg", "property": "rotation", "keyframes": [{ "time": 0, "value": -10 }, { "time": 0.5, "value": 8 }, { "time": 1, "value": -10 }] },
         { "part": "torso", "property": "y", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.25, "value": -1.5 }, { "time": 0.5, "value": 0 }, { "time": 0.75, "value": -1.5 }, { "time": 1, "value": 0 }] },
-        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -18 }, { "time": 0.5, "value": -22 }, { "time": 1, "value": -18 }] },
-        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 18 }, { "time": 0.5, "value": 12 }, { "time": 1, "value": 18 }] }
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -8 }, { "time": 0.5, "value": -12 }, { "time": 1, "value": -8 }] },
+        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 30 }, { "time": 0.5, "value": 24 }, { "time": 1, "value": 30 }] },
+        { "part": "weapon", "property": "rotation", "keyframes": [{ "time": 0, "value": 5 }, { "time": 0.5, "value": 3 }, { "time": 1, "value": 5 }] }
       ]
     },
     {
@@ -27,9 +29,11 @@
       "duration": 300,
       "loop": false,
       "tracks": [
-        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -20 }, { "time": 0.12, "value": -35 }, { "time": 0.5, "value": -25 }, { "time": 1, "value": -20 }] },
-        { "part": "weapon", "property": "x", "keyframes": [{ "time": 0, "value": 2 }, { "time": 0.12, "value": -4 }, { "time": 1, "value": 2 }] },
-        { "part": "torso", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.12, "value": -4 }, { "time": 0.5, "value": -1 }, { "time": 1, "value": 0 }] },
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -10 }, { "time": 0.12, "value": -20 }, { "time": 0.5, "value": -12 }, { "time": 1, "value": -10 }] },
+        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 28 }, { "time": 0.12, "value": 23 }, { "time": 0.5, "value": 26 }, { "time": 1, "value": 28 }] },
+        { "part": "weapon", "property": "x", "keyframes": [{ "time": 0, "value": 15 }, { "time": 0.12, "value": 11 }, { "time": 1, "value": 15 }] },
+        { "part": "weapon", "property": "rotation", "keyframes": [{ "time": 0, "value": 4 }, { "time": 0.12, "value": 2 }, { "time": 0.5, "value": 3 }, { "time": 1, "value": 4 }] },
+        { "part": "torso", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.12, "value": -3 }, { "time": 0.5, "value": -1 }, { "time": 1, "value": 0 }] },
         { "part": "torso", "property": "x", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.12, "value": -2 }, { "time": 1, "value": 0 }] }
       ]
     },
@@ -38,9 +42,10 @@
       "duration": 2500,
       "loop": false,
       "tracks": [
-        { "part": "weapon", "property": "rotation", "keyframes": [{ "time": 0, "value": 10 }, { "time": 0.15, "value": 50 }, { "time": 0.7, "value": 50 }, { "time": 1, "value": 10 }] },
-        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -20 }, { "time": 0.15, "value": -40 }, { "time": 0.7, "value": -40 }, { "time": 1, "value": -20 }] },
-        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 15 }, { "time": 0.15, "value": -10 }, { "time": 0.35, "value": -15 }, { "time": 0.55, "value": -10 }, { "time": 0.7, "value": -5 }, { "time": 1, "value": 15 }] },
+        { "part": "weapon", "property": "rotation", "keyframes": [{ "time": 0, "value": 4 }, { "time": 0.15, "value": 52 }, { "time": 0.7, "value": 56 }, { "time": 1, "value": 4 }] },
+        { "part": "weapon", "property": "y", "keyframes": [{ "time": 0, "value": 9 }, { "time": 0.15, "value": 5 }, { "time": 0.7, "value": 5 }, { "time": 1, "value": 9 }] },
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -10 }, { "time": 0.15, "value": -34 }, { "time": 0.7, "value": -38 }, { "time": 1, "value": -10 }] },
+        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 28 }, { "time": 0.15, "value": -4 }, { "time": 0.35, "value": -10 }, { "time": 0.55, "value": -6 }, { "time": 0.7, "value": -2 }, { "time": 1, "value": 28 }] },
         { "part": "torso", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.15, "value": 5 }, { "time": 0.7, "value": 5 }, { "time": 1, "value": 0 }] }
       ]
     },
@@ -49,8 +54,9 @@
       "duration": 1200,
       "loop": false,
       "tracks": [
-        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -20 }, { "time": 0.2, "value": -10 }, { "time": 0.5, "value": -15 }, { "time": 1, "value": -20 }] },
-        { "part": "weapon", "property": "rotation", "keyframes": [{ "time": 0, "value": 10 }, { "time": 0.2, "value": 20 }, { "time": 0.5, "value": 15 }, { "time": 1, "value": 10 }] },
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -10 }, { "time": 0.2, "value": -2 }, { "time": 0.5, "value": -6 }, { "time": 1, "value": -10 }] },
+        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 28 }, { "time": 0.2, "value": 24 }, { "time": 0.5, "value": 26 }, { "time": 1, "value": 28 }] },
+        { "part": "weapon", "property": "rotation", "keyframes": [{ "time": 0, "value": 4 }, { "time": 0.2, "value": 15 }, { "time": 0.5, "value": 10 }, { "time": 1, "value": 4 }] },
         { "part": "torso", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.3, "value": 3 }, { "time": 1, "value": 0 }] }
       ]
     },
@@ -59,11 +65,11 @@
       "duration": 600,
       "loop": false,
       "tracks": [
-        { "part": "torso", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.6, "value": -50 }, { "time": 1, "value": -80 }] },
-        { "part": "head", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.5, "value": -20 }, { "time": 1, "value": -35 }] },
-        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -20 }, { "time": 1, "value": 30 }] },
-        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 15 }, { "time": 1, "value": -20 }] },
-        { "part": "right_leg", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 1, "value": 15 }] },
+        { "part": "torso", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.6, "value": -44 }, { "time": 1, "value": -78 }] },
+        { "part": "head", "property": "rotation", "keyframes": [{ "time": 0, "value": 0 }, { "time": 0.5, "value": -18 }, { "time": 1, "value": -30 }] },
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -10 }, { "time": 1, "value": 26 }] },
+        { "part": "left_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": 28 }, { "time": 1, "value": -14 }] },
+        { "part": "right_leg", "property": "rotation", "keyframes": [{ "time": 0, "value": -2 }, { "time": 1, "value": 12 }] },
         { "part": "torso", "property": "y", "keyframes": [{ "time": 0, "value": 0 }, { "time": 1, "value": 10 }] }
       ]
     },
@@ -72,7 +78,7 @@
       "duration": 400,
       "loop": false,
       "tracks": [
-        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -20 }, { "time": 0.3, "value": -50 }, { "time": 0.5, "value": 10 }, { "time": 1, "value": -20 }] }
+        { "part": "right_arm", "property": "rotation", "keyframes": [{ "time": 0, "value": -10 }, { "time": 0.3, "value": -36 }, { "time": 0.5, "value": 8 }, { "time": 1, "value": -10 }] }
       ]
     }
   ]

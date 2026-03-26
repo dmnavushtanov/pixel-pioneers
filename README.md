@@ -155,8 +155,9 @@ The game uses a **cutout-rig system** (`UnitRig.ts`) that renders characters fro
 
 Each rig part specifies a `displaySize` (width × height in pixels). This is critical because:
 - Source PNGs can be any resolution (e.g., 512×512 from AI generation)
-- `displaySize` scales them to gameplay-appropriate sizes (~60px total unit height)
+- `displaySize` scales them to gameplay-appropriate sizes (~72px total unit height)
 - Positions/offsets in `rig.json` are in **display-space pixels**, not source pixels
+- Animation tracks are **absolute local values**, so base pose numbers in `rig.json` must match the starting values in `animations.json`
 
 ### Unit Folder Structure
 
@@ -177,28 +178,36 @@ public/assets/units/{unit_id}/
 
 ### Standard Parts (7 per unit)
 
-| Part | Display Size | Pivot Point | Purpose |
-|------|-------------|-------------|---------|
-| `head` | 16×18 | Lower-center (neck) | Head with headwear |
-| `torso` | 20×26 | Lower-center (waist) | Body/jacket |
-| `left_arm` | 8×20 | Upper (shoulder) | Support arm |
-| `right_arm` | 8×20 | Upper (shoulder) | Weapon arm |
-| `left_leg` | 8×22 | Top (hip) | Left leg |
-| `right_leg` | 8×22 | Top (hip) | Right leg |
-| `weapon` | 30×6 | Left-center (grip) | Rifle/melee |
+| Part | Source Size | Display Size | Pivot Point | Purpose |
+|------|-------------|-------------|-------------|---------|
+| `head` | 160×160 | 22×22 | Lower-center (neck) | Head + hat/fez silhouette |
+| `torso` | 160×200 | 29×36 | Lower-center (waist) | Main body anchor |
+| `left_arm` | 160×200 | 18×22 | Upper-left shoulder | Support arm under barrel |
+| `right_arm` | 160×200 | 18×22 | Upper-left shoulder | Rear grip / trigger arm |
+| `left_leg` | 120×220 | 15×28 | Top-center (hip) | Rear planted leg |
+| `right_leg` | 120×220 | 15×28 | Top-center (hip) | Forward planted leg |
+| `weapon` | 240×56 | 46×11 | Grip point | Thick readable rifle silhouette |
 
 ### Rig Hierarchy
 
 ```
 root
  ├─ torso (pivot: waist, position: 0,0)
- │   ├─ head (pivot: neck, position: 0,-22)
- │   ├─ left_arm (pivot: shoulder, position: -8,-18, rotation: 15°)
- │   ├─ right_arm (pivot: shoulder, position: 8,-18, rotation: -20°)
- │   │   └─ weapon (pivot: grip, position: 2,12, rotation: 10°)
- ├─ left_leg (pivot: hip, position: -4,14)
- └─ right_leg (pivot: hip, position: 4,14)
+ │   ├─ head (pivot: neck, position: 2,-30)
+ │   ├─ left_arm (pivot: shoulder, position: 2,-22, rotation: 28°)
+ │   ├─ right_arm (pivot: shoulder, position: 10,-21, rotation: -10°)
+ │   │   └─ weapon (pivot: grip, position: 15,9, rotation: 4°)
+ ├─ left_leg (pivot: hip, position: -6,16)
+ └─ right_leg (pivot: hip, position: 6,15)
 ```
+
+### Visual Pipeline Rules
+
+- Author each unit as one matched 7-part set; do not mix unrelated AI-generated cutouts
+- Keep outline thickness, shading, and palette treatment consistent across every part in the same folder
+- Arms and legs should stay chunky and readable instead of thin anatomical limbs
+- The rifle should be slightly oversized so it reads clearly on mobile
+- Get the right-facing base pose correct first; attackers are mirrored from that pose at runtime
 
 ### Animation Clips
 
@@ -214,7 +223,7 @@ root
 
 ### Procedural Fallback
 
-If rig/animation JSON files are missing, `UnitLoader` generates colored placeholder shapes with default hierarchy and animations. The game is always playable without art assets.
+If rig/animation JSON files are missing, `UnitLoader` generates chunkier placeholder shapes with the same readable proportions and aiming pose. The game stays playable without art assets, but final units should use authored PNG part sets instead of fallback art.
 
 ### How to Add a New Unit
 
