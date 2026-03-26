@@ -88,6 +88,7 @@ export class PlayerUnit extends Phaser.GameObjects.Container {
       this.reloadTimer -= delta;
       if (this.reloadTimer <= 0) {
         this.isReloading = false;
+        this.attackCooldown = 0; // Ready to fire immediately after reload
         if (this.rig) this.rig.play('idle');
       }
     }

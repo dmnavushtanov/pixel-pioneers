@@ -58,10 +58,8 @@ export class CombatSystem {
           );
           this.projectiles.push(proj);
 
-          // Start reload after shot for muzzle-loading weapons
-          if (defender.weapon.reloadStyle === 'barrel') {
-            defender.startReload(defender.weapon.reloadTime);
-          }
+          // Start reload after every shot — duration depends on weapon type
+          defender.startReload(defender.weapon.reloadTime);
         }
       }
     }
