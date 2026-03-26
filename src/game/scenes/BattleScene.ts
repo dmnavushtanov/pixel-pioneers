@@ -238,6 +238,11 @@ export class BattleScene extends Phaser.Scene {
 
     const allDefenders = this.slots.map(s => s.unit).filter((u): u is PlayerUnit => u !== null);
 
+    // Update defender rigs and reload timers
+    for (const defender of allDefenders) {
+      defender.update(_time, scaledDelta);
+    }
+
     const killed = this.combatSystem.update(
       allDefenders,
       this.waveSystem.enemies,
